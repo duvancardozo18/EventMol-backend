@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import userRoutes from './src/routes/userRoutes.js';
 
 // 1. Cargar variables de entorno
 dotenv.config();
@@ -17,7 +18,7 @@ app.use(cors()); // Para permitir solicitudes entre distintos dominios
 app.use(morgan('dev')); // Logger HTTP para desarrollo
 
 // 4. Importar y usar rutas
-
+app.use('/api', userRoutes);
 
 // 5. Ruta inicial para verificar el servidor
 app.get('/', (req, res) => {
