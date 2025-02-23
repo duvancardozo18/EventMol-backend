@@ -4,6 +4,8 @@ import { getUsers, createUser, verifyEmail, loginUser } from '../controllers/use
 const router = Router();
 
 router.get('/users', getUsers);
+router.post('/users', createUser);
+router.get('/verify-email/:token', verifyEmail);
 
 
 
