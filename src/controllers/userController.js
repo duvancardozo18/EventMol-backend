@@ -69,4 +69,47 @@ export const verifyEmail = async (req, res) => {
     }
 };
 
+// Inicio de sesión
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
+    // Buscar usuario por email
+    const user = await UserModel.getUserByEmail(email);
+    if (!user) {
+      return res.status(400).json({ error: 'Credenciales incorrectas.' });
+    }
+
+    // Verificar email verificado
+    if (!user.email_verified) {
+      return res.status(403).json({ error: 'Debes verificar tu email primero.' });
+    }
+
+    // Validar password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Credenciales incorrectas.' });
+    }
+
+    // Generar token JWT para sesión
+    const token = jwt.sign(
+      { id_user: user.id_user, email: user.email, id_role: user.id_role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      mensaje: 'Inicio de sesión exitoso.',
+      token,
+      usuario: {
+        id_user: user.id_user,
+        email: user.email,
+        name: user.name,
+      },
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al iniciar sesión.' });
+  }
+};
