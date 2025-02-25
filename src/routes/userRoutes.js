@@ -14,7 +14,6 @@ router.post('/login', loginUser);
 //diego:
 router.post('/request-password-reset', requestPasswordReset);
 router.post('/reset-password', resetPassword);
-router.delete('/users/:id_user', deleteUser);
-
+router.delete('/delete-user', deleteUser);
 
 export default router;
