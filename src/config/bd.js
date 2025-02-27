@@ -3,6 +3,7 @@ const { Pool } = pkg;
 
 import dotenv from 'dotenv';
 
+
 dotenv.config();
 
 const pool = new Pool({
@@ -13,4 +14,18 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
+
+// verificar conexión para no ponernos nerviosos
+async function verifyConnection() {
+  try {
+    await pool.query('SELECT 1');
+    console.log('✅ Conexión exitosa con PostgreSQL.');
+  } catch (error) {
+    console.error('❌ Error al conectar con PostgreSQL:', error);
+  }
+}
+
+verifyConnection(); // Llamada inmediata para testear la conexión
+
 export default pool;
+

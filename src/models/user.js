@@ -36,8 +36,26 @@ export const verifyEmail = async (email) => {
     return result.rows[0];
 };
 
-// Verificar si el email ya existe
+// Verificar si el email ya existe (para validaciones o login)
+export const getUserWithPassword = async (email) => {
+  const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+  return result.rows[0];
+};
+
+// Obtener usuario por email
 export const getUserByEmail = async (email) => {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    return result.rows[0];
-};  
+  const result = await pool.query(
+    'SELECT id_user, name, last_name, email, id_role FROM users WHERE email = $1',
+    [email]
+  );
+  return result.rows[0]; // Retorna el usuario encontrado o undefined
+};
+
+// Actualizar rol de usuario
+export const updateUserRole = async (id_user, newRoleId) => {
+  const result = await pool.query(
+    'UPDATE users SET id_role = $1 WHERE id_user = $2 RETURNING *',
+    [newRoleId, id_user]
+  );
+  return result.rows[0]; // Retorna el usuario actualizado o undefined
+};
