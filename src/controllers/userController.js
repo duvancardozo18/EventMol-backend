@@ -13,7 +13,6 @@ export const getUsers = async (req, res) => {
   }
 };
 
-//Crear usuarios
 export const createUser = async (req, res) => {
   try {
     const { email, password, ...restData } = req.body;
@@ -32,7 +31,7 @@ export const createUser = async (req, res) => {
     );
 
     // Construir el enlace de verificación con el token
-    const verificationURL = `http://localhost:3000/verify-account/${token}`;
+    const verificationURL = `http://localhost:5173/verifyAccount/${token}`;
 
     // Configurar correo de verificación
     const mailOptions = {
@@ -65,26 +64,32 @@ export const createUser = async (req, res) => {
           </div>
         </div>
       `,
-
     };
 
     // Intentar enviar el email antes de crear el usuario en la base de datos
     try {
+      console.log('📧 Intentando enviar correo...');
       await transporter.sendMail(mailOptions);
+      console.log('✅ Correo enviado exitosamente.');
     } catch (error) {
-      console.error('Error al enviar el correo:', error);
+      console.error('❌ Error al enviar el correo:', error);
       return res.status(500).json({ error: 'Error al enviar el email de verificación. No se registró el usuario.' });
     }
 
     // Encriptar contraseña
+    console.log('🔒 Encriptando contraseña...');
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('✅ Contraseña encriptada correctamente.');
 
     // Crear usuario con contraseña encriptada (solo si el email se envió correctamente)
+    console.log('📝 Intentando registrar usuario en la base de datos...');
     const newUser = await UserModel.createUser({
       email,
       password: hashedPassword,
       ...restData,
     });
+
+    console.log('✅ Usuario registrado exitosamente en la base de datos:', newUser);
 
     res.status(201).json({
       mensaje: 'Usuario creado exitosamente. Se envió un correo de verificación.',
@@ -92,11 +97,10 @@ export const createUser = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error('❌ Error en la función createUser:', error);
     res.status(500).json({ error: 'Error al crear usuario.' });
   }
 };
-
 
 // Verificar email del usuario mediante token JWT
 export const verifyEmail = async (req, res) => {
