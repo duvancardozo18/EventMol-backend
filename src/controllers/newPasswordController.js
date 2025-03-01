@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import * as PasswordModel from '../models/newPassword.js';
 import * as UserModel from '../models/user.js';
 import transporter from '../config/emailConfig.js';
+import { mailOptions } from '../helpers/newPasswordMailHelper.js'; 
 
 // se solicita la recuperación de contraseña, se deve enviar un email. 
 export const requestPasswordReset = async (req, res) => {
@@ -41,26 +42,27 @@ export const requestPasswordReset = async (req, res) => {
     
 
     //despues crear esta funcion en un archivo aparte, acordarme !!!!!!
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: '🔒 Recuperación de Contraseña',
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
-            <h2 style="color: #333;">🔒 Recuperación de Contraseña</h2>
-            <p>Hola, has solicitado restablecer tu contraseña.</p>
-            <p>Haz clic en el siguiente botón para continuar:</p>
-            <a href="${resetURL}" style="background-color: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
-              🔗 Restablecer Contraseña
-            </a>
-            <p>Si no solicitaste este cambio, puedes ignorar este mensaje.</p>
-            <br>
-            <p style="font-size: 12px; color: #777;">Este enlace expirará en 15 minutos.</p>
-          </div>
-        `,
-      };
+    // const mailOptions = {
+    //     from: process.env.EMAIL_USER,
+    //     to: email,
+    //     subject: '🔒 Recuperación de Contraseña',
+    //     html: `
+    //       <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
+    //         <h2 style="color: #333;">🔒 Recuperación de Contraseña</h2>
+    //         <p>Hola, has solicitado restablecer tu contraseña.</p>
+    //         <p>Haz clic en el siguiente botón para continuar:</p>
+    //         <a href="${resetURL}" style="background-color: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
+    //           🔗 Restablecer Contraseña
+    //         </a>
+    //         <p>Si no solicitaste este cambio, puedes ignorar este mensaje.</p>
+    //         <br>
+    //         <p style="font-size: 12px; color: #777;">Este enlace expirará en 15 minutos.</p>
+    //       </div>
+    //     `,
+    //   };
+    // await transporter.sendMail(mailOptions);
 
-    await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions(email, resetURL));
 
     res.status(200).json({ mensaje: 'Correo de recuperación enviado.' });
   } catch (error) {
