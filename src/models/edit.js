@@ -29,3 +29,9 @@ export const updateUser = async (email, userData) => {
 
   return result.rows[0];
 };
+
+// Verificar si el email ya existe
+export const getUserByEmailEdit = async (email) => {
+  const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+  return result.rows[0];
+};
