@@ -18,7 +18,9 @@ export const requestPasswordReset = async (req, res) => {
 
 
     //verificar que el usuario este email_verified
-    
+    if (!user.email_verified) {
+      return res.status(403).json({ error: 'Debes verificar tu email primero.' });
+    }
 
     // Generar un token temporal
     const resetToken = crypto.randomBytes(32).toString('hex');
