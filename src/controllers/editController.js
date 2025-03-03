@@ -1,22 +1,31 @@
-import { getUserByEmail, updateUser } from '../models/edit.js';
+import { getUserByEmail, getUserByEmailEdit, updateUser } from '../models/edit.js';
 
-// 🔹 Función para editar los datos del usuario
+// Función para editar los datos del usuario
 export const editUser = async (req, res) => {
   try {
     const { email, name, last_name, id_role } = req.body;
 
     // Verificar si el usuario existe
-    const user = await getUserByEmail(email);
+    const user = await getUserByEmailEdit(email);
     if (!user) {
       return res.status(404).json({ error: 'No se encontró un usuario con ese email.' });
     }
 
-    // Actualizar los datos del usuario
-    const updatedUser = await updateUser(email, { name, last_name, id_role });
-
-    if (!updatedUser) {
-      return res.status(500).json({ error: 'Error al actualizar los datos del usuario.' });
+    //verificar que el usuario este email_verified
+    if (!user.email_verified) {
+      return res.status(403).json({ error: 'Debes verificar tu email primero.' });
     }
+
+    // Verificar si hay al menos un dato válido para actualizar
+    const updateData = { name, last_name, id_role };
+    const hasValidData = Object.values(updateData).some(value => value !== undefined && value !== null);
+
+    if (!hasValidData) {
+      return res.status(400).json({ error: 'No se enviaron datos válidos para actualizar.' });
+    }
+
+    // Actualizar usuario
+    const updatedUser = await updateUser(email, updateData);
 
     res.status(200).json({
       mensaje: 'Usuario actualizado exitosamente.',

@@ -20,3 +20,9 @@ export const updatePassword = async (email, newPassword) => {
   );
   return result.rows[0];
 };
+
+// Verificar si el email ya existe
+export const getUserByEmail = async (email) => {
+  const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+  return result.rows[0];
+};  
