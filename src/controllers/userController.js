@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import * as UserModel from '../models/user.js';
+import transporter from '../config/emailConfig.js';
 
 // Obtener users
 export const getUsers = async (req, res) => {
@@ -12,44 +13,92 @@ export const getUsers = async (req, res) => {
   }
 };
 
-// Crear usuario
 export const createUser = async (req, res) => {
   try {
     const { email, password, ...restData } = req.body;
 
-    // Validar si ya existe el usuario
+    // Validar si el usuario ya existe
     const existingUser = await UserModel.getUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({ error: 'El email ya está registrado.' });
     }
 
-    // Encriptar contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generar token JWT con el email del usuario
+    const token = jwt.sign(
+      { email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' } // Expira en 1 día
+    );
 
-    // Crear usuario con contraseña encriptada
+    // Construir el enlace de verificación con el token
+    const verificationURL = `http://localhost:5173/verifyAccount/${token}`;
+
+    // Configurar correo de verificación
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Verificación de Cuenta EventosIA ✔',
+      html: `
+        <div style="font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; padding: 20px; border-radius: 10px;">
+          <div style="max-width: 500px; background-color: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin: auto;">
+            
+            <h2 style="color: #333;">🎉 ¡Bienvenido a nuestro sistema EventosIA! 🎉</h2>
+            
+            <p style="color: #555; font-size: 16px;">Estamos emocionados de tenerte con nosotros. Antes de comenzar, necesitamos verificar tu dirección de correo electrónico. 📨</p>
+            
+            <p style="color: #444; font-size: 16px; font-weight: bold;">Haz clic en el siguiente botón para verificar tu cuenta:</p>
+
+            <a href="${verificationURL}" 
+              style="display: inline-block; background-color: #007bff; color: white; padding: 12px 20px; text-decoration: none; 
+              font-size: 18px; border-radius: 5px; font-weight: bold; margin-top: 10px;">
+              ✅ Verificar mi Cuenta
+            </a>
+            
+            <p style="color: #555; font-size: 14px; margin-top: 20px;">Si no creaste esta cuenta, puedes ignorar este mensaje. 🚀</p>
+
+            <hr style="border: none; height: 1px; background-color: #ddd; margin: 20px 0;">
+            
+            <p style="font-size: 12px; color: #777;">⚠️ Este enlace expirará en 24 horas. Asegúrate de verificar tu cuenta lo antes posible.</p>
+
+            <p style="font-size: 12px; color: #777;">📩 Si tienes algún problema, contáctanos en <strong>eventosia854@gmail.com</strong></p>
+          </div>
+        </div>
+      `,
+    };
+
+    // Intentar enviar el email antes de crear el usuario en la base de datos
+    try {
+      console.log('📧 Intentando enviar correo...');
+      await transporter.sendMail(mailOptions);
+      console.log('✅ Correo enviado exitosamente.');
+    } catch (error) {
+      console.error('❌ Error al enviar el correo:', error);
+      return res.status(500).json({ error: 'Error al enviar el email de verificación. No se registró el usuario.' });
+    }
+
+    // Encriptar contraseña
+    console.log('🔒 Encriptando contraseña...');
+    const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('✅ Contraseña encriptada correctamente.');
+
+    // Crear usuario con contraseña encriptada (solo si el email se envió correctamente)
+    console.log('📝 Intentando registrar usuario en la base de datos...');
     const newUser = await UserModel.createUser({
       email,
       password: hashedPassword,
       ...restData,
     });
 
-    // Genera token JWT usando email del nuevo usuario
-    const token = jwt.sign(
-        { email: newUser.email },
-        process.env.JWT_SECRET,
-        { expiresIn: '1d' } // Expira en 1 día
-    );
-
-    // Por ahora, imprime el token en la consola
-    console.log(`🔑 Token de verificación: ${token}`);
+    console.log('✅ Usuario registrado exitosamente en la base de datos:', newUser);
 
     res.status(201).json({
-      mensaje: 'Usuario creado exitosamente',
+      mensaje: 'Usuario creado exitosamente. Se envió un correo de verificación.',
       usuario: newUser,
     });
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: 'Error al crear usuario' });
+    console.error('❌ Error en la función createUser:', error);
+    res.status(500).json({ error: 'Error al crear usuario.' });
   }
 };
 
@@ -75,7 +124,7 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     // Buscar usuario por email
-    const user = await UserModel.getUserByEmail(email);
+    const user = await UserModel.getUserWithPassword(email);
     if (!user) {
       return res.status(400).json({ error: 'Credenciales incorrectas.' });
     }
@@ -95,7 +144,7 @@ export const loginUser = async (req, res) => {
     const token = jwt.sign(
       { id_user: user.id_user, email: user.email, id_role: user.id_role },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '1d' }
     );
 
     res.status(200).json({
@@ -111,5 +160,50 @@ export const loginUser = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al iniciar sesión.' });
+  }
+};
+
+// Obtener usuario por email
+export const getUserByEmail = async (req, res) => {
+  const { email } = req.params;
+
+  try {
+    const usuario = await UserModel.getUserByEmail(email);
+
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    res.status(200).json({ usuario });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener el usuario.' });
+  }
+};
+
+export const updatedRolUser = async (req, res) => {
+  const { id } = req.params;
+  const { newRoleId } = req.body;
+  const { id_role } = req.user; // Se asume que este dato viene del token JWT
+
+  try {
+    // Solo los usuarios con id_role = 4 (SuperAdmin) pueden cambiar roles
+    if (id_role !== 4) {
+      return res.status(403).json({ error: 'No tienes permisos para cambiar roles.' });
+    }
+
+    const usuarioActualizado = await UserModel.updateUserRole(id, newRoleId);
+
+    if (!usuarioActualizado) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    res.status(200).json({
+      mensaje: 'Rol actualizado exitosamente',
+      usuario: usuarioActualizado,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al actualizar el rol del usuario.' });
   }
 };

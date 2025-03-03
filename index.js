@@ -11,26 +11,33 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 7777;
 
-// 3. Middlewares (funciones intermedias)
+// 3. Configuración de CORS (permite solo el frontend en http://localhost:5173)
+const corsOptions = {
+  origin: ['http://localhost:5173'], // Cambiar esto si el frontend está en otro puerto
+  methods: 'GET,POST,PUT,DELETE',
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
+
+// 4. Middlewares generales
 app.use(express.json()); // Para parsear JSON
 app.use(express.urlencoded({ extended: true })); // Para datos del formulario
-app.use(cors()); // Para permitir solicitudes entre distintos dominios
 app.use(morgan('dev')); // Logger HTTP para desarrollo
 
-// 4. Importar y usar rutas
+// 5. Importar y usar rutas
 app.use('/api', userRoutes);
 
-// 5. Ruta inicial para verificar el servidor
+// 6. Ruta inicial para verificar el servidor
 app.get('/', (req, res) => {
   res.send('API funcionando 🚀');
 });
 
-// 6. Manejo de errores (opcional pero recomendado)
+// 7. Manejo de errores para rutas no encontradas
 app.use((req, res, next) => {
   res.status(404).json({ message: 'Ruta no encontrada ❌' });
 });
 
-// 7. Iniciar el servidor
+// 8. Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`🔥 Servidor corriendo en → http://localhost:${PORT}`);
 });
