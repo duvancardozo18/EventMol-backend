@@ -15,8 +15,8 @@ export const getFoodByEvent = async (req, res) => {
 // Asignar comida a un evento
 export const assignFoodToEvent = async (req, res) => {
   try {
-    const { id_event, id_food, quantity } = req.body;
-    const assignedFood = await EventFoodModel.assignFoodToEvent(id_event, id_food, quantity);
+    const { id_event, id_food } = req.body;
+    const assignedFood = await EventFoodModel.assignFoodToEvent(id_event, id_food);
     res.status(201).json(assignedFood);
   } catch (error) {
     console.error(error);
@@ -28,9 +28,9 @@ export const assignFoodToEvent = async (req, res) => {
 export const updateFoodInEvent = async (req, res) => {
     try {
       const { id_event, id_food } = req.params;
-      const { new_id_food, quantity } = req.body; // Nuevo id_food y cantidad
+      const { new_id_food } = req.body; // Nuevo id_food y cantidad
   
-      const updatedFood = await EventFoodModel.updateFoodInEvent(id_event, id_food, new_id_food, quantity);
+      const updatedFood = await EventFoodModel.updateFoodInEvent(id_event, id_food, new_id_food);
   
       if (!updatedFood) {
         return res.status(404).json({ error: 'Alimento en evento no encontrado o no se pudo actualizar' });
