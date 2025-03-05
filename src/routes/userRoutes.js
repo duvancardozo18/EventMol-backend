@@ -19,6 +19,6 @@ router.put('/users/:id/rol', authMiddleware, updatedRolUser);
 router.post('/request-password-reset', requestPasswordReset);
 router.post('/reset-password', resetPassword);
 router.delete('/delete-user', deleteUser);
-router.patch('/edit-user', editUser);
+router.put('/edit-user', editUser);
 
 export default router;

@@ -1,6 +1,6 @@
 import pool from '../config/bd.js';
 
-// 🔹 Función para buscar usuario por email antes de editarlo
+//Función para buscar usuario por email antes de editarlo
 export const getUserByEmail = async (email) => {
   const result = await pool.query(
     'SELECT * FROM users WHERE email = $1',
@@ -9,20 +9,29 @@ export const getUserByEmail = async (email) => {
   return result.rows[0];
 };
 
-//actualizar los datos del usuario
+//Actualizar datos del usuario sin sobrescribir con `null`
 export const updateUser = async (email, userData) => {
-    if (Object.keys(userData).length === 0) {
-      throw new Error('No se enviaron datos para actualizar');
-    }
-  
-    const fields = Object.keys(userData).map((key, index) => `${key} = $${index + 1}`).join(', ');
-    const values = Object.values(userData);
-  
-    const result = await pool.query(
-      `UPDATE users SET ${fields} WHERE email = $${values.length + 1} RETURNING *`,
-      [...values, email]
-    );
-  
-    return result.rows[0];
-  };
-  
+  // Filtrar campos `undefined` o `null`
+  const validFields = Object.entries(userData).filter(([_, value]) => value !== undefined && value !== null);
+
+  if (validFields.length === 0) {
+    throw new Error('No se enviaron datos válidos para actualizar');
+  }
+
+  //Construcción dinámica de la consulta
+  const fields = validFields.map(([key], index) => `${key} = $${index + 1}`).join(', ');
+  const values = validFields.map(([_, value]) => value);
+
+  const result = await pool.query(
+    `UPDATE users SET ${fields} WHERE email = $${values.length + 1} RETURNING *`,
+    [...values, email]
+  );
+
+  return result.rows[0];
+};
+
+// Verificar si el email ya existe
+export const getUserByEmailEdit = async (email) => {
+  const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+  return result.rows[0];
+};
