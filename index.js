@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import userRoutes from './src/routes/userRoutes.js';
 import eventRoutes from './src/routes/eventRoutes.js';
+import locationRoutes from './src/routes/locationRoutes.js';
 
 // 1. Cargar variables de entorno
 dotenv.config();
@@ -28,6 +29,7 @@ app.use(morgan('dev')); // Logger HTTP para desarrollo
 // 5. Importar y usar rutas
 app.use('/api', userRoutes);
 app.use('/api', eventRoutes);
+app.use('/api', locationRoutes);
 
 // 6. Ruta inicial para verificar el servidor
 app.get('/', (req, res) => {
