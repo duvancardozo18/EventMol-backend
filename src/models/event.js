@@ -4,7 +4,7 @@ import pool from '../config/bd.js';
 export const getAllEvents = async () => {
   const result = await pool.query(`
     SELECT e.id_event, e.name, es.state_name AS state, 
-           t.event_type, l.name AS location, , 
+    t.event_type, l.name AS location 
     FROM events e
     JOIN event_state es ON e.event_state_id = es.id_event_state
     JOIN type_of_event t ON e.type_of_event_id = t.id_type_of_event
@@ -37,13 +37,14 @@ export const createEvent = async (name, event_state_id, type_of_event_id, locati
 
 // Actualizar un evento
 export const updateEvent = async (id_event, name, event_state_id, type_of_event_id, location_id) => {
-  const result = await pool.query(`
-    UPDATE events 
-    SET name = $1, event_state_id = $2, type_of_event_id = $3, location_id = $4,
-    WHERE id_event = $7 RETURNING *
-  `, [name, event_state_id, type_of_event_id, location_id, id_event]);
-  return result.rows[0];
-};
+    const result = await pool.query(`
+      UPDATE events 
+      SET name = $1, event_state_id = $2, type_of_event_id = $3, location_id = $4
+      WHERE id_event = $5 RETURNING *
+    `, [name, event_state_id, type_of_event_id, location_id, id_event]);
+  
+    return result.rows[0];
+  };  
 
 // Eliminar un evento
 export const deleteEvent = async (id_event) => {
