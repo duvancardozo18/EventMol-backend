@@ -1,0 +1,70 @@
+import * as EventModel from '../models/event.js';
+
+// Obtener todos los eventos
+export const getEvents = async (req, res) => {
+  try {
+    const events = await EventModel.getAllEvents();
+    res.status(200).json(events);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener los eventos' });
+  }
+};
+
+// Obtener un evento por ID
+export const getEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const event = await EventModel.getEventById(id);
+    if (!event) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+    res.status(200).json(event);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener el evento' });
+  }
+};
+
+// Crear un nuevo evento
+export const createEvent = async (req, res) => {
+  try {
+    const { name, event_state_id, type_of_event_id, location_id, start_time, end_time } = req.body;
+    const newEvent = await EventModel.createEvent(name, event_state_id, type_of_event_id, location_id, start_time, end_time);
+    res.status(201).json(newEvent);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al crear el evento' });
+  }
+};
+
+// Actualizar un evento
+export const updateEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, event_state_id, type_of_event_id, location_id, start_time, end_time } = req.body;
+    const updatedEvent = await EventModel.updateEvent(id, name, event_state_id, type_of_event_id, location_id, start_time, end_time);
+    if (!updatedEvent) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+    res.status(200).json(updatedEvent);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al actualizar el evento' });
+  }
+};
+
+// Eliminar un evento
+export const deleteEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedEvent = await EventModel.deleteEvent(id);
+    if (!deletedEvent) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+    res.status(200).json({ mensaje: 'Evento eliminado correctamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al eliminar el evento' });
+  }
+};
