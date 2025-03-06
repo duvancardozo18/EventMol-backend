@@ -3,7 +3,12 @@ import bcrypt from 'bcryptjs';
 import * as UserModel from '../models/user.js';
 import transporter from '../config/emailConfig.js';
 
-// Obtener users
+//delete user
+//import { getUserByEmail, deleteUserByEmail } from '../models/user.js';
+import { mailOptions } from '../helpers/deleteMailHelper.js';
+
+
+// Obtener usuarios
 export const getUsers = async (req, res) => {
   try {
     const users = await UserModel.getUsers();
@@ -13,6 +18,7 @@ export const getUsers = async (req, res) => {
   }
 };
 
+// Crear usuario
 export const createUser = async (req, res) => {
   try {
     const { email, password, ...restData } = req.body;
@@ -24,11 +30,7 @@ export const createUser = async (req, res) => {
     }
 
     // Generar token JWT con el email del usuario
-    const token = jwt.sign(
-      { email },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' } // Expira en 1 día
-    );
+    const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
     // Construir el enlace de verificación con el token
     const verificationURL = `http://localhost:5173/verifyAccount/${token}`;
@@ -38,58 +40,22 @@ export const createUser = async (req, res) => {
       from: process.env.EMAIL_USER,
       to: email,
       subject: 'Verificación de Cuenta EventosIA ✔',
-      html: `
-        <div style="font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; padding: 20px; border-radius: 10px;">
-          <div style="max-width: 500px; background-color: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin: auto;">
-            
-            <h2 style="color: #333;">🎉 ¡Bienvenido a nuestro sistema EventosIA! 🎉</h2>
-            
-            <p style="color: #555; font-size: 16px;">Estamos emocionados de tenerte con nosotros. Antes de comenzar, necesitamos verificar tu dirección de correo electrónico. 📨</p>
-            
-            <p style="color: #444; font-size: 16px; font-weight: bold;">Haz clic en el siguiente botón para verificar tu cuenta:</p>
-
-            <a href="${verificationURL}" 
-              style="display: inline-block; background-color: #007bff; color: white; padding: 12px 20px; text-decoration: none; 
-              font-size: 18px; border-radius: 5px; font-weight: bold; margin-top: 10px;">
-              ✅ Verificar mi Cuenta
-            </a>
-            
-            <p style="color: #555; font-size: 14px; margin-top: 20px;">Si no creaste esta cuenta, puedes ignorar este mensaje. 🚀</p>
-
-            <hr style="border: none; height: 1px; background-color: #ddd; margin: 20px 0;">
-            
-            <p style="font-size: 12px; color: #777;">⚠️ Este enlace expirará en 24 horas. Asegúrate de verificar tu cuenta lo antes posible.</p>
-
-            <p style="font-size: 12px; color: #777;">📩 Si tienes algún problema, contáctanos en <strong>eventosia854@gmail.com</strong></p>
-          </div>
-        </div>
-      `,
+      html: `<p>Haz clic en el siguiente enlace para verificar tu cuenta:</p>
+             <a href="${verificationURL}">Verificar mi Cuenta</a>`,
     };
 
-    // Intentar enviar el email antes de crear el usuario en la base de datos
-    try {
-      console.log('📧 Intentando enviar correo...');
-      await transporter.sendMail(mailOptions);
-      console.log('✅ Correo enviado exitosamente.');
-    } catch (error) {
-      console.error('❌ Error al enviar el correo:', error);
-      return res.status(500).json({ error: 'Error al enviar el email de verificación. No se registró el usuario.' });
-    }
+    // Enviar email de verificación antes de registrar usuario
+    await transporter.sendMail(mailOptions);
 
     // Encriptar contraseña
-    console.log('🔒 Encriptando contraseña...');
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log('✅ Contraseña encriptada correctamente.');
 
-    // Crear usuario con contraseña encriptada (solo si el email se envió correctamente)
-    console.log('📝 Intentando registrar usuario en la base de datos...');
+    // Crear usuario
     const newUser = await UserModel.createUser({
       email,
       password: hashedPassword,
       ...restData,
     });
-
-    console.log('✅ Usuario registrado exitosamente en la base de datos:', newUser);
 
     res.status(201).json({
       mensaje: 'Usuario creado exitosamente. Se envió un correo de verificación.',
@@ -97,25 +63,25 @@ export const createUser = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error en la función createUser:', error);
+    console.error('Error en la función createUser:', error);
     res.status(500).json({ error: 'Error al crear usuario.' });
   }
 };
 
 // Verificar email del usuario mediante token JWT
 export const verifyEmail = async (req, res) => {
-    const { token } = req.params;
-  
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const email = decoded.email;
-  
-      await UserModel.verifyEmail(email);
-  
-      res.status(200).json({ mensaje: 'Email verificado exitosamente.' });
-    } catch (error) {
-      res.status(400).json({ error: 'Token inválido o expirado.' });
-    }
+  const { token } = req.params;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const email = decoded.email;
+
+    await UserModel.verifyEmail(email);
+
+    res.status(200).json({ mensaje: 'Email verificado exitosamente.' });
+  } catch (error) {
+    res.status(400).json({ error: 'Token inválido o expirado.' });
+  }
 };
 
 // Inicio de sesión
@@ -129,12 +95,12 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ error: 'Credenciales incorrectas.' });
     }
 
-    // Verificar email verificado
+    // Verificar si el email está verificado
     if (!user.email_verified) {
       return res.status(403).json({ error: 'Debes verificar tu email primero.' });
     }
 
-    // Validar password
+    // Validar contraseña
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ error: 'Credenciales incorrectas.' });
@@ -181,7 +147,8 @@ export const getUserByEmail = async (req, res) => {
   }
 };
 
-export const updatedRolUser = async (req, res) => {
+// Actualizar rol de usuario
+export const updateUserRole = async (req, res) => {
   const { id } = req.params;
   const { newRoleId } = req.body;
   const { id_role } = req.user; // Se asume que este dato viene del token JWT
@@ -205,5 +172,75 @@ export const updatedRolUser = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al actualizar el rol del usuario.' });
+  }
+};
+
+// Función para editar los datos del usuario
+export const editUser = async (req, res) => {
+  try {
+    const { email, name, last_name, id_role } = req.body;
+
+    // Verificar si el usuario existe
+    const user = await UserModel.getUserByEmailEdit(email);
+    if (!user) {
+      return res.status(404).json({ error: 'No se encontró un usuario con ese email.' });
+    }
+
+    // Verificar que el usuario tenga el email verificado
+    if (!user.email_verified) {
+      return res.status(403).json({ error: 'Debes verificar tu email primero.' });
+    }
+
+    // Verificar si hay al menos un dato válido para actualizar
+    const updateData = { name, last_name, id_role };
+    const hasValidData = Object.values(updateData).some(value => value !== undefined && value !== null);
+
+    if (!hasValidData) {
+      return res.status(400).json({ error: 'No se enviaron datos válidos para actualizar.' });
+    }
+
+    // Actualizar usuario
+    const updatedUser = await UserModel.updateUser(email, updateData);
+
+    res.status(200).json({
+      mensaje: 'Usuario actualizado exitosamente.',
+      usuario: updatedUser
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error en la actualización del usuario.' });
+  }
+};
+
+//delete user
+
+export const deleteUser = async (req, res) => {
+  try {
+    const { email } = req.body; 
+
+    if (!email) {
+      return res.status(400).json({ error: 'El email es requerido para eliminar el usuario.' });
+    }
+
+    // Verificar si el usuario existe
+    const user = await UserModel.getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ error: 'No se encontró un usuario con ese email.' });
+    }
+
+    // Eliminar el usuario
+    const deletedUser = await UserModel.deleteUserByEmail(email);
+    if (!deletedUser) {
+      return res.status(500).json({ error: 'Error al eliminar el usuario.' });
+    }
+
+    await transporter.sendMail(mailOptions(deletedUser));
+
+    res.status(200).json({ mensaje: 'Usuario eliminado y correo de confirmación enviado.' });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error en la eliminación del usuario.' });
   }
 };
