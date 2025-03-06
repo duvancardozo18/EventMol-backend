@@ -14,14 +14,14 @@ export const createUser = async (userData) => {
     email,
     email_verified = false,
     password,
-    id_role,
+    role_id,
   } = userData;
 
   const result = await pool.query(
-    `INSERT INTO users (name, last_name, email, email_verified, password, id_role, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, NOW())
+    `INSERT INTO users (name, last_name, email, password, role_id, created_at)
+     VALUES ($1, $2, $3, $4, $5, NOW())
      RETURNING *`,
-    [name, last_name, email, email_verified, password, id_role]
+    [name, last_name, email, password, role_id]
   );
 
   return result.rows[0];
@@ -81,7 +81,7 @@ export const updateUser = async (email, userData) => {
 // Actualizar rol de usuario
 export const updateUserRole = async (id_user, newRoleId) => {
   const result = await pool.query(
-    'UPDATE users SET id_role = $1 WHERE id_user = $2 RETURNING *',
+    'UPDATE users SET role_id = $1 WHERE id_user = $2 RETURNING *',
     [newRoleId, id_user]
   );
   return result.rows[0]; // Retorna el usuario actualizado o undefined
