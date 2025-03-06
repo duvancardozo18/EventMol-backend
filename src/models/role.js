@@ -41,7 +41,7 @@ export const getRolePermissions = async (id_role) => {
   const result = await pool.query(
     `SELECT p.* FROM permissions p
      JOIN role_permissions rp ON p.id_permission = rp.permission_id
-     WHERE rp.role_id = $1`,
+     WHERE rp.id_role = $1`,
     [id_role]
   );
   return result.rows;
@@ -50,10 +50,10 @@ export const getRolePermissions = async (id_role) => {
 // Asignar permisos a un rol
 export const assignPermissionsToRole = async (id_role, permissions) => {
   const values = permissions.map((perm_id) => `(${id_role}, ${perm_id})`).join(", ");
-  await pool.query(`INSERT INTO role_permissions (role_id, permission_id) VALUES ${values}`);
+  await pool.query(`INSERT INTO role_permissions (id_role, permission_id) VALUES ${values}`);
 };
 
 // Eliminar permisos de un rol
 export const removePermissionsFromRole = async (id_role) => {
-  await pool.query('DELETE FROM role_permissions WHERE role_id = $1', [id_role]);
+  await pool.query('DELETE FROM role_permissions WHERE id_role = $1', [id_role]);
 };

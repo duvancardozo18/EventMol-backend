@@ -4,7 +4,7 @@ export const getPermissions = async (req, res) => {
     try {
       console.log('Usuario autenticado:', req.user); // 🐛 Verifica qué usuario está accediendo
 
-      const { id_role } = req.user; // 🔹 Se obtiene el rol del usuario autenticado
+      const { id_role  } = req.user; // 🔹 Se obtiene el rol del usuario autenticado
 
       if (id_role !== 1) { // 🔥 SOLO Superadmin (ID 1) puede ver todos los permisos
         return res.status(403).json({ error: 'No tienes permisos suficientes.' });
