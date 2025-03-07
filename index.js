@@ -7,6 +7,10 @@ import eventRoutes from './src/routes/eventRoutes.js';
 import locationRoutes from './src/routes/locationRoutes.js';
 import foodRoutes from './src/routes/foodRoutes.js';
 import eventFoodRoutes from './src/routes/eventFoodRoutes.js';
+import roleRoutes from './src/routes/roleRoutes.js';
+import permissionsRoutes from './src/routes/permissionRoutes.js';
+import invitationRoutes from './src/routes/invitationRoutes.js';
+import statisticsRoutes from './src/routes/statisticsRoutes.js';
 
 // 1. Cargar variables de entorno
 dotenv.config();
@@ -34,6 +38,10 @@ app.use('/api', eventRoutes);
 app.use('/api', locationRoutes);
 app.use('/api', foodRoutes);
 app.use('/api', eventFoodRoutes);
+app.use('/api', roleRoutes);
+app.use('/api', permissionsRoutes);
+app.use('/api', invitationRoutes);
+app.use('/api', statisticsRoutes);
 
 // 6. Ruta inicial para verificar el servidor
 app.get('/', (req, res) => {

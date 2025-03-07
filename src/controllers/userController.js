@@ -95,10 +95,10 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ error: 'Credenciales incorrectas.' });
     }
 
-    // Verificar si el email está verificado
-    if (!user.email_verified) {
-      return res.status(403).json({ error: 'Debes verificar tu email primero.' });
-    }
+    // // Verificar si el email está verificado
+    // if (!user.email_verified) {
+    //   return res.status(403).json({ error: 'Debes verificar tu email primero.' });
+    // }
 
     // Validar contraseña
     const isMatch = await bcrypt.compare(password, user.password);
