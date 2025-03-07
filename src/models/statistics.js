@@ -25,6 +25,7 @@ export const getStatistics = async () => {
             resources: 'SELECT * FROM resources;',
             food: 'SELECT * FROM food;',
 
+            //Estadisticas por filtros
             // // Eventos más populares
             // popular_events: `
             //     SELECT e.id_event, e.name, COUNT(p.id_user) AS total_participantes

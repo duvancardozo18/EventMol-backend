@@ -1,7 +1,9 @@
 import jwt from 'jsonwebtoken';
 import * as UserModel from '../models/user.js';
+import * as EventModel from '../models/event.js';
 import transporter from '../config/emailConfig.js';
 import { storeInvitationToken, getInvitationByToken, deleteInvitationToken } from '../models/invitation.js';
+import { getInvitationMailOptions } from '../helpers/invitationMailHelper.js';
 
 // Generar y enviar una invitación a un usuario
 export const sendInvitation = async (req, res) => {
@@ -20,6 +22,12 @@ export const sendInvitation = async (req, res) => {
             return res.status(404).json({ error: 'Usuario no encontrado.' });
         }
 
+        // Obtener el evento desde la base de datos
+        const event = await EventModel.getEventById(id_event);
+        if (!event) {
+            return res.status(404).json({ error: 'Evento no encontrado.' });
+        }
+
         // Generar token único con JWT
         const token = jwt.sign(
             { id_event, id_user },
@@ -33,18 +41,8 @@ export const sendInvitation = async (req, res) => {
         // Enlace de invitación
         const invitationLink = `http://localhost:7777/api/invitacion/${token}`;
 
-        // Configurar el email
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: user.email,
-            subject: 'Invitación a un evento',
-            html: `
-                <h3>Has sido invitado a un evento</h3>
-                <p>Haz clic en el siguiente enlace para aceptar la invitación:</p>
-                <a href="${invitationLink}">${invitationLink}</a>
-                <p>Este enlace expirará en 7 días.</p>
-            `
-        };
+        // Configurar el email con el nombre del evento
+        const mailOptions = getInvitationMailOptions(user.email, event.name, id_event, token);        
 
         // Enviar el correo
         await transporter.sendMail(mailOptions);
@@ -61,6 +59,30 @@ export const sendInvitation = async (req, res) => {
 };
 
 //  Validar la invitación cuando el usuario accede al enlace
+// export const validateInvitation = async (req, res) => {
+//     try {
+//         const { token } = req.params;
+
+//         // Buscar la invitación en memoria
+//         const invitation = getInvitationByToken(token);
+//         if (!invitation) {
+//             return res.status(404).json({ error: 'Invitación no válida o expirada.' });
+//         }
+
+//         // Simulamos que se guarda la asistencia en la BD (porque no podemos modificarla)
+//         console.log(`✅ Usuario ${invitation.id_user} aceptó la invitación al evento ${invitation.id_event}`);
+
+//         // Eliminar la invitación de memoria
+//         deleteInvitationToken(token);
+
+//         res.status(200).json({ mensaje: 'Invitación aceptada con éxito.' });
+
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'Error al validar la invitación.' });
+//     }
+// };
+// 📌 Validar la invitación y registrar al usuario en la BD
 export const validateInvitation = async (req, res) => {
     try {
         const { token } = req.params;
@@ -71,13 +93,21 @@ export const validateInvitation = async (req, res) => {
             return res.status(404).json({ error: 'Invitación no válida o expirada.' });
         }
 
-        // Simulamos que se guarda la asistencia en la BD (porque no podemos modificarla)
-        console.log(`✅ Usuario ${invitation.id_user} aceptó la invitación al evento ${invitation.id_event}`);
+        const { id_event, id_user } = invitation;
+
+        // Verificar si el usuario ya está registrado en el evento
+        const existingParticipant = await ParticipantModel.getParticipant(id_event, id_user);
+        if (existingParticipant) {
+            return res.status(400).json({ error: 'El usuario ya está registrado en este evento.' });
+        }
+
+        // Registrar al usuario en la tabla "participants"
+        await ParticipantModel.addParticipant(id_event, id_user);
 
         // Eliminar la invitación de memoria
         deleteInvitationToken(token);
 
-        res.status(200).json({ mensaje: 'Invitación aceptada con éxito.' });
+        res.status(200).json({ mensaje: 'Invitación aceptada y usuario registrado en el evento.' });
 
     } catch (error) {
         console.error(error);
