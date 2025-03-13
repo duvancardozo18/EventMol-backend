@@ -29,8 +29,8 @@ export const getLocation = async (req, res) => {
 // Crear una nueva ubicación
 export const createLocation = async (req, res) => {
   try {
-    const { name, description, quantity_available, price } = req.body;
-    const newLocation = await LocationModel.createLocation(name, description, quantity_available, price);
+    const { name, description, quantity_available, price, address } = req.body;
+    const newLocation = await LocationModel.createLocation(name, description, quantity_available, price, address);
     res.status(201).json(newLocation);
   } catch (error) {
     console.error(error);
@@ -42,9 +42,9 @@ export const createLocation = async (req, res) => {
 export const updateLocation = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, quantity_available, price } = req.body;
+    const { name, description, quantity_available, price, address } = req.body;
     
-    const updatedLocation = await LocationModel.updateLocation(id, name, description, quantity_available, price);
+    const updatedLocation = await LocationModel.updateLocation(id, name, description, quantity_available, price, address);
     
     if (!updatedLocation) {
       return res.status(404).json({ error: 'Ubicación no encontrada' });
