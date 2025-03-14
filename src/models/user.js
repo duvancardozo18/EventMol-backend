@@ -1,12 +1,19 @@
 import pool from '../config/bd.js';
 
-// Obtener todos los usuarios
+// Obtener todos los usuarios con su rol
 export const getUsers = async () => {
-  const result = await pool.query('SELECT * FROM users ORDER BY id_user ASC');
+  const result = await pool.query(`
+    SELECT u.id_user, u.name, u.last_name, u.email, u.email_verified, u.created_at,
+           r.id_role, r.name AS role_name
+    FROM users u
+    LEFT JOIN user_role ur ON u.id_user = ur.user_id
+    LEFT JOIN roles r ON ur.role_id = r.id_role
+    ORDER BY u.id_user ASC
+  `);
   return result.rows;
 };
 
-// Crear un nuevo usuario
+// Crear un nuevo usuario y asignarle un rol
 export const createUser = async (userData) => {
   const {
     name,
@@ -14,59 +21,84 @@ export const createUser = async (userData) => {
     email,
     email_verified = false,
     password,
-    id_role,
+    id_role, // El rol ahora se inserta en user_role
   } = userData;
 
-  const result = await pool.query(
-    `INSERT INTO users (name, last_name, email, email_verified, password, id_role, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, NOW())
-     RETURNING *`,
-    [name, last_name, email, email_verified, password, id_role]
+  // Insertar en la tabla `users`
+  const userResult = await pool.query(
+    `INSERT INTO users (name, last_name, email, email_verified, password, created_at)
+     VALUES ($1, $2, $3, $4, $5, NOW())
+     RETURNING id_user`,
+    [name, last_name, email, email_verified, password]
   );
 
-  return result.rows[0];
+  const id_user = userResult.rows[0].id_user;
+
+  // Insertar la relación en `user_role`
+  await pool.query(
+    `INSERT INTO user_role (user_id, role_id) VALUES ($1, $2)`,
+    [id_user, id_role]
+  );
+
+  return { id_user, name, last_name, email, email_verified, id_role };
 };
 
-// Marcar email como verificado
-export const verifyEmail = async (email) => {
-    const result = await pool.query(
-      'UPDATE users SET email_verified = true WHERE email = $1 RETURNING *',
-      [email]
-    );
-    return result.rows[0];
-};
-
-// Verificar si el email ya existe (para validaciones o login)
-export const getUserWithPassword = async (email) => {
-  const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-  return result.rows[0];
-};
-
-// Obtener usuario por email con todos los campos
+// Obtener usuario por email
 export const getUserByEmail = async (email) => {
   const result = await pool.query(
-    'SELECT * FROM users WHERE email = $1',
+    `SELECT u.id_user, u.name, u.last_name, u.email, u.email_verified, u.created_at,
+            r.id_role, r.name AS role_name
+     FROM users u
+     LEFT JOIN user_role ur ON u.id_user = ur.user_id
+     LEFT JOIN roles r ON ur.role_id = r.id_role
+     WHERE u.email = $1`,
     [email]
   );
-  return result.rows[0]; // Retorna el usuario encontrado o undefined
-};
-
-// Verificar si el email ya existe antes de editar
-export const getUserByEmailEdit = async (email) => {
-  const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
   return result.rows[0];
 };
 
-// Actualizar datos del usuario 
+// // Verificar email
+// export const verifyEmail = async (email) => {
+//   const result = await pool.query(
+//     'UPDATE users SET email_verified = true WHERE email = $1 RETURNING *',
+//     [email]
+//   );
+//   return result.rows[0];
+// };
+export const verifyEmail = async (email) => {
+  const result = await pool.query(
+    'UPDATE users SET email_verified = true WHERE email = $1 RETURNING *',
+    [email]
+  );
+  
+  console.log('Resultado de la actualización:', result.rows); // 👀 Ver qué retorna
+
+  return result.rows[0];
+};
+
+
+// Obtener usuario por email con contraseña (para login)
+export const getUserWithPassword = async (email) => {
+  const result = await pool.query(
+    `SELECT u.id_user, u.name, u.last_name, u.email, u.password, u.email_verified, 
+            r.id_role, r.name AS role_name
+     FROM users u
+     LEFT JOIN user_role ur ON u.id_user = ur.user_id
+     LEFT JOIN roles r ON ur.role_id = r.id_role
+     WHERE u.email = $1`,
+    [email]
+  );
+  return result.rows[0];
+};
+
+// Actualizar datos del usuario (excepto rol)
 export const updateUser = async (email, userData) => {
-  // Filtrar campos `undefined` o `null`
   const validFields = Object.entries(userData).filter(([_, value]) => value !== undefined && value !== null);
 
   if (validFields.length === 0) {
     throw new Error('No se enviaron datos válidos para actualizar');
   }
 
-  // Construcción dinámica de la consulta
   const fields = validFields.map(([key], index) => `${key} = $${index + 1}`).join(', ');
   const values = validFields.map(([_, value]) => value);
 
@@ -78,30 +110,28 @@ export const updateUser = async (email, userData) => {
   return result.rows[0];
 };
 
-// Actualizar rol de usuario
+// Actualizar rol de un usuario en `user_role`
 export const updateUserRole = async (id_user, newRoleId) => {
   const result = await pool.query(
-    'UPDATE users SET id_role = $1 WHERE id_user = $2 RETURNING *',
+    `UPDATE user_role SET role_id = $1 WHERE user_id = $2 RETURNING *`,
     [newRoleId, id_user]
   );
-  return result.rows[0]; // Retorna el usuario actualizado o undefined
+  return result.rows[0];
 };
 
-
-// //buscar usuario por email para eliminarlo
-// export const getUserByEmail = async (email) => {
-//   const result = await pool.query(
-//     'SELECT * FROM users WHERE email = $1',
-//     [email]
-//   );
-//   return result.rows[0];
-// };
-
-//eliminar usuario por email
+// Eliminar usuario y su relación en `user_role`
 export const deleteUserByEmail = async (email) => {
-  const result = await pool.query(
-    'DELETE FROM users WHERE email = $1 RETURNING *',
-    [email]
-  );
+  // Obtener ID del usuario antes de eliminar
+  const user = await getUserByEmail(email);
+  if (!user) return null;
+
+  const { id_user } = user;
+
+  // Eliminar relación en `user_role`
+  await pool.query('DELETE FROM user_role WHERE user_id = $1', [id_user]);
+
+  // Eliminar usuario
+  const result = await pool.query('DELETE FROM users WHERE email = $1 RETURNING *', [email]);
+
   return result.rows[0]; // Retorna el usuario eliminado
 };

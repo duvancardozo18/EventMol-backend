@@ -2,26 +2,23 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import * as UserModel from '../models/user.js';
 import transporter from '../config/emailConfig.js';
-
-//delete user
-//import { getUserByEmail, deleteUserByEmail } from '../models/user.js';
 import { mailOptions } from '../helpers/deleteMailHelper.js';
 
-
-// Obtener usuarios
+// Obtener usuarios con sus roles
 export const getUsers = async (req, res) => {
   try {
     const users = await UserModel.getUsers();
     res.status(200).json({ users });
   } catch (error) {
-    res.status(500).json({ error: 'Error al obtener users' });
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener los usuarios' });
   }
 };
 
-// Crear usuario
+// Crear usuario y asignar rol en `user_role`
 export const createUser = async (req, res) => {
   try {
-    const { email, password, ...restData } = req.body;
+    const { email, password, id_role, ...restData } = req.body;
 
     // Validar si el usuario ya existe
     const existingUser = await UserModel.getUserByEmail(email);
@@ -50,10 +47,11 @@ export const createUser = async (req, res) => {
     // Encriptar contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Crear usuario
+    // Crear usuario y asignarle rol en `user_role`
     const newUser = await UserModel.createUser({
       email,
       password: hashedPassword,
+      id_role,
       ...restData,
     });
 
@@ -84,7 +82,7 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
-// Inicio de sesión
+// Inicio de sesión con `user_role`
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -94,11 +92,6 @@ export const loginUser = async (req, res) => {
     if (!user) {
       return res.status(400).json({ error: 'Credenciales incorrectas.' });
     }
-
-    // // Verificar si el email está verificado
-    // if (!user.email_verified) {
-    //   return res.status(403).json({ error: 'Debes verificar tu email primero.' });
-    // }
 
     // Validar contraseña
     const isMatch = await bcrypt.compare(password, user.password);
@@ -120,6 +113,7 @@ export const loginUser = async (req, res) => {
         id_user: user.id_user,
         email: user.email,
         name: user.name,
+        role: user.role_name, // Ahora incluye el nombre del rol
       },
     });
 
@@ -147,15 +141,15 @@ export const getUserByEmail = async (req, res) => {
   }
 };
 
-// Actualizar rol de usuario
+// Actualizar rol de usuario en `user_role`
 export const updateUserRole = async (req, res) => {
   const { id } = req.params;
   const { newRoleId } = req.body;
   const { id_role } = req.user; // Se asume que este dato viene del token JWT
 
   try {
-    // Solo los usuarios con id_role = 4 (SuperAdmin) pueden cambiar roles
-    if (id_role !== 4) {
+    // Solo los SuperAdmin (id_role = 1) pueden cambiar roles
+    if (id_role !== 1) {
       return res.status(403).json({ error: 'No tienes permisos para cambiar roles.' });
     }
 
@@ -175,46 +169,7 @@ export const updateUserRole = async (req, res) => {
   }
 };
 
-// Función para editar los datos del usuario
-export const editUser = async (req, res) => {
-  try {
-    const { email, name, last_name, id_role } = req.body;
-
-    // Verificar si el usuario existe
-    const user = await UserModel.getUserByEmailEdit(email);
-    if (!user) {
-      return res.status(404).json({ error: 'No se encontró un usuario con ese email.' });
-    }
-
-    // Verificar que el usuario tenga el email verificado
-    if (!user.email_verified) {
-      return res.status(403).json({ error: 'Debes verificar tu email primero.' });
-    }
-
-    // Verificar si hay al menos un dato válido para actualizar
-    const updateData = { name, last_name, id_role };
-    const hasValidData = Object.values(updateData).some(value => value !== undefined && value !== null);
-
-    if (!hasValidData) {
-      return res.status(400).json({ error: 'No se enviaron datos válidos para actualizar.' });
-    }
-
-    // Actualizar usuario
-    const updatedUser = await UserModel.updateUser(email, updateData);
-
-    res.status(200).json({
-      mensaje: 'Usuario actualizado exitosamente.',
-      usuario: updatedUser
-    });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error en la actualización del usuario.' });
-  }
-};
-
-//delete user
-
+// Eliminar usuario y su relación en `user_role`
 export const deleteUser = async (req, res) => {
   try {
     const { email } = req.body; 
@@ -229,7 +184,7 @@ export const deleteUser = async (req, res) => {
       return res.status(404).json({ error: 'No se encontró un usuario con ese email.' });
     }
 
-    // Eliminar el usuario
+    // Eliminar el usuario y su rol en `user_role`
     const deletedUser = await UserModel.deleteUserByEmail(email);
     if (!deletedUser) {
       return res.status(500).json({ error: 'Error al eliminar el usuario.' });
@@ -242,5 +197,35 @@ export const deleteUser = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error en la eliminación del usuario.' });
+  }
+};
+
+// editar Usuarios 
+export const editUser = async (req, res) => {
+  try {
+    const { email, name, last_name } = req.body;
+
+    // Verificar si el usuario existe
+    const user = await UserModel.getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ error: 'No se encontró un usuario con ese email.' });
+    }
+
+    // Verificar que el usuario tenga el email verificado
+    if (!user.email_verified) {
+      return res.status(403).json({ error: 'Debes verificar tu email primero.' });
+    }
+
+    // Actualizar usuario
+    const updatedUser = await UserModel.updateUser(email, { name, last_name });
+
+    res.status(200).json({
+      mensaje: 'Usuario actualizado exitosamente.',
+      usuario: updatedUser
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error en la actualización del usuario.' });
   }
 };

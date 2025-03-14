@@ -34,11 +34,13 @@ export const createRole = async (req, res) => {
     const { role_name, description, permissions } = req.body;
 
     if (!role_name || !description) {
-      return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+      return res.status(400).json({ error: 'El nombre y la descripción son obligatorios.' });
     }
 
+    // Crear rol
     const newRole = await RoleModel.createRole(role_name, description);
 
+    // Asignar permisos si se enviaron
     if (permissions && permissions.length > 0) {
       await RoleModel.assignPermissionsToRole(newRole.id_role, permissions);
     }
@@ -56,12 +58,17 @@ export const updateRole = async (req, res) => {
     const { id } = req.params;
     const { role_name, description, permissions } = req.body;
 
+    if (!role_name || !description) {
+      return res.status(400).json({ error: 'El nombre y la descripción son obligatorios.' });
+    }
+
+    // Actualizar información del rol
     const updatedRole = await RoleModel.updateRole(id, role_name, description);
     if (!updatedRole) return res.status(404).json({ error: 'Rol no encontrado.' });
 
-    await RoleModel.removePermissionsFromRole(id);
-    if (permissions && permissions.length > 0) {
-      await RoleModel.assignPermissionsToRole(id, permissions);
+    // Actualizar permisos solo si se envían
+    if (permissions) {
+      await RoleModel.updateRolePermissions(id, permissions);
     }
 
     res.status(200).json({ mensaje: 'Rol actualizado correctamente.', role: updatedRole });
@@ -75,9 +82,12 @@ export const updateRole = async (req, res) => {
 export const deleteRole = async (req, res) => {
   try {
     const { id } = req.params;
-    await RoleModel.removePermissionsFromRole(id);
-    const deletedRole = await RoleModel.deleteRole(id);
 
+    // Eliminar permisos asociados antes de borrar el rol
+    await RoleModel.removePermissionsFromRole(id);
+
+    // Eliminar rol
+    const deletedRole = await RoleModel.deleteRole(id);
     if (!deletedRole) return res.status(404).json({ error: 'Rol no encontrado.' });
 
     res.status(200).json({ mensaje: 'Rol eliminado correctamente.' });

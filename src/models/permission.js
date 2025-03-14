@@ -7,23 +7,23 @@ export const getPermissions = async () => {
 };
 
 // Obtener permisos de un rol específico
-export const getRolePermissions = async (role_id) => {
+export const getRolePermissions = async (id_role) => {
   const result = await pool.query(
     `SELECT p.* FROM permissions p
      JOIN role_permissions rp ON p.id_permission = rp.permission_id
-     WHERE rp.role_id = $1`,
-    [role_id]
+     WHERE rp.id_role = $1`,
+    [id_role]
   );
   return result.rows;
 };
 
 // Asignar permisos a un rol
-export const assignPermissionsToRole = async (role_id, permissions) => {
-  const values = permissions.map((perm_id) => `(${role_id}, ${perm_id})`).join(", ");
-  await pool.query(`INSERT INTO role_permissions (role_id, permission_id) VALUES ${values}`);
+export const assignPermissionsToRole = async (id_role, permissions) => {
+  const values = permissions.map((perm_id) => `(${id_role}, ${perm_id})`).join(", ");
+  await pool.query(`INSERT INTO role_permissions (id_role, permission_id) VALUES ${values}`);
 };
 
 // Eliminar todos los permisos de un rol
-export const removePermissionsFromRole = async (role_id) => {
-  await pool.query('DELETE FROM role_permissions WHERE role_id = $1', [role_id]);
+export const removePermissionsFromRole = async (id_role) => {
+  await pool.query('DELETE FROM role_permissions WHERE id_role = $1', [id_role]);
 };

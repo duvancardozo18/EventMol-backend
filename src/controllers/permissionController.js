@@ -2,11 +2,11 @@ import * as PermissionModel from '../models/permission.js';
 
 export const getPermissions = async (req, res) => {
     try {
-      console.log('Usuario autenticado:', req.user); // 🐛 Verifica qué usuario está accediendo
+      console.log('Usuario autenticado:', req.user); //Verifica qué usuario está accediendo
 
-      const { id_role  } = req.user; // 🔹 Se obtiene el rol del usuario autenticado
+      const { id_role } = req.user; // 🔹 Se obtiene el rol del usuario autenticado
 
-      if (id_role !== 1) { // 🔥 SOLO Superadmin (ID 1) puede ver todos los permisos
+      if (id_role !== 1) { //SOLO Superadmin (ID 1) puede ver todos los permisos
         return res.status(403).json({ error: 'No tienes permisos suficientes.' });
       }
 
@@ -18,12 +18,11 @@ export const getPermissions = async (req, res) => {
     }
 };
 
-
 // Obtener permisos de un rol específico
 export const getRolePermissions = async (req, res) => {
   try {
-    const { id } = req.params;
-    const permissions = await PermissionModel.getRolePermissions(id);
+    const { id_role } = req.params; 
+    const permissions = await PermissionModel.getRolePermissions(id_role);
 
     if (!permissions.length) {
       return res.status(404).json({ error: 'No se encontraron permisos para este rol.' });
@@ -39,14 +38,14 @@ export const getRolePermissions = async (req, res) => {
 // Asignar permisos a un rol
 export const assignPermissionsToRole = async (req, res) => {
   try {
-    const { role_id, permissions } = req.body;
+    const { id_role, permissions } = req.body; 
 
-    if (!role_id || !permissions || !permissions.length) {
+    if (!id_role || !permissions || !permissions.length) {
       return res.status(400).json({ error: 'Se requiere un rol y al menos un permiso.' });
     }
 
-    await PermissionModel.removePermissionsFromRole(role_id);
-    await PermissionModel.assignPermissionsToRole(role_id, permissions);
+    await PermissionModel.removePermissionsFromRole(id_role);
+    await PermissionModel.assignPermissionsToRole(id_role, permissions);
 
     res.status(200).json({ mensaje: 'Permisos asignados correctamente.' });
   } catch (error) {
