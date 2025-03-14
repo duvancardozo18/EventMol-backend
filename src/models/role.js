@@ -14,11 +14,24 @@ export const getRoleById = async (id_role) => {
 
 // Crear un nuevo rol
 export const createRole = async (role_name, description) => {
-  const result = await pool.query(
-    'INSERT INTO roles (name, description) VALUES ($1, $2) RETURNING *',
-    [role_name, description]
-  );
-  return result.rows[0];
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Insertar el nuevo rol
+    const result = await client.query(
+      'INSERT INTO roles (name, description) VALUES ($1, $2) RETURNING *',
+      [role_name, description]
+    );
+
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 // Editar un rol
@@ -30,10 +43,26 @@ export const updateRole = async (id_role, role_name, description) => {
   return result.rows[0];
 };
 
-// Eliminar un rol
+// Eliminar un rol (incluyendo sus permisos)
 export const deleteRole = async (id_role) => {
-  const result = await pool.query('DELETE FROM roles WHERE id_role = $1 RETURNING *', [id_role]);
-  return result.rows[0];
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Eliminar los permisos asociados al rol antes de eliminarlo
+    await client.query('DELETE FROM role_permissions WHERE id_role = $1', [id_role]);
+
+    // Eliminar el rol
+    const result = await client.query('DELETE FROM roles WHERE id_role = $1 RETURNING *', [id_role]);
+
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 // Obtener permisos de un rol
@@ -47,13 +76,50 @@ export const getRolePermissions = async (id_role) => {
   return result.rows;
 };
 
-// Asignar permisos a un rol
+// Asignar permisos a un rol (múltiples permisos)
 export const assignPermissionsToRole = async (id_role, permissions) => {
-  const values = permissions.map((perm_id) => `(${id_role}, ${perm_id})`).join(", ");
-  await pool.query(`INSERT INTO role_permissions (id_role, permission_id) VALUES ${values}`);
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Insertar permisos nuevos en la tabla intermedia
+    const values = permissions.map((perm_id) => `(${id_role}, ${perm_id})`).join(", ");
+    await client.query(`INSERT INTO role_permissions (id_role, permission_id) VALUES ${values}`);
+
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
-// Eliminar permisos de un rol
+// Eliminar todos los permisos de un rol
 export const removePermissionsFromRole = async (id_role) => {
   await pool.query('DELETE FROM role_permissions WHERE id_role = $1', [id_role]);
+};
+
+// Reasignar permisos de un rol (eliminar y asignar nuevos)
+export const updateRolePermissions = async (id_role, newPermissions) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Eliminar los permisos anteriores
+    await client.query('DELETE FROM role_permissions WHERE id_role = $1', [id_role]);
+
+    // Insertar los nuevos permisos
+    if (newPermissions.length > 0) {
+      const values = newPermissions.map((perm_id) => `(${id_role}, ${perm_id})`).join(", ");
+      await client.query(`INSERT INTO role_permissions (id_role, permission_id) VALUES ${values}`);
+    }
+
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 };

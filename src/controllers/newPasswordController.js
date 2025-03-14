@@ -1,13 +1,16 @@
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
-import pool from '../config/bd.js';
 import bcrypt from 'bcryptjs';
 import * as PasswordModel from '../models/newPassword.js';
 import * as UserModel from '../models/user.js';
 import transporter from '../config/emailConfig.js';
-import { mailOptions } from '../helpers/newPasswordMailHelper.js'; 
+import { mailOptions } from '../helpers/newPasswordMailHelper.js';
 
-// se solicita la recuperación de contraseña, se deve enviar un email. 
+// Mapa temporal en memoria para almacenar los tokens de recuperación
+const passwordResetTokens = new Map();
+
+/**
+ * Genera un token de recuperación y envía un email con el enlace.
+ */
 export const requestPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
@@ -17,29 +20,22 @@ export const requestPasswordReset = async (req, res) => {
       return res.status(404).json({ error: 'No se encontró un usuario con ese email.' });
     }
 
-
-    //verificar que el usuario este email_verified
+    // Verificar que el email esté verificado
     if (!user.email_verified) {
       return res.status(403).json({ error: 'Debes verificar tu email primero.' });
     }
 
-    // Generar un token temporal
+    // Generar un token temporal con expiración de 1 hora
     const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = Date.now() + 3600000; // Expira en 1 hora
 
-    // Guarda el token temporalmente en la base de datos
-    await PasswordModel.savePasswordResetToken(email, resetToken);
+    // Guardar el token en memoria en lugar de la base de datos
+    passwordResetTokens.set(resetToken, { email, expiresAt });
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    // Generar el enlace de recuperación
+    const resetURL = `http://localhost:7777/api/reset-password/${resetToken}`;
 
-    //endpoint de recuperacion
-    const resetURL = `http://localhost:7777/reset-password/${resetToken}`;
-
+    // Enviar correo con el enlace
     await transporter.sendMail(mailOptions(email, resetURL));
 
     res.status(200).json({ mensaje: 'Correo de recuperación enviado.' });
@@ -49,33 +45,36 @@ export const requestPasswordReset = async (req, res) => {
   }
 };
 
-const getUserByToken = async (token) => {
-    const result = await pool.query(
-      'SELECT * FROM users WHERE password = $1', // Asumiendo que el token está en la columna "password"
-      [token]
-    );
-    return result.rows[0];
-  };
-  
-
-// Restablecer contraseña
+/**
+ * Verifica si el token es válido y permite cambiar la contraseña.
+ */
 export const resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
+    const { token } = req.params;
+    const { newPassword } = req.body;
 
-    // Buscar usuario con el token de recuperación (en este caso lo almacenamos en "password")
-    const user = await getUserByToken(token);
-
-    if (!user) {
+    // Validar si el token existe y no ha expirado
+    const tokenData = passwordResetTokens.get(token);
+    if (!tokenData) {
       return res.status(400).json({ error: 'Token inválido o expirado.' });
     }
 
+    // Verificar si el token ya expiró
+    if (Date.now() > tokenData.expiresAt) {
+      passwordResetTokens.delete(token); // Eliminar token expirado
+      return res.status(400).json({ error: 'El token ha expirado.' });
+    }
+
+    const { email } = tokenData;
+
+    // Hashear la nueva contraseña
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await pool.query(
-      'UPDATE users SET password = $1 WHERE email = $2',
-      [hashedPassword, user.email]
-    );
+    // Actualizar la contraseña en la base de datos
+    await PasswordModel.updatePassword(email, hashedPassword);
+
+    // Eliminar el token después de su uso
+    passwordResetTokens.delete(token);
 
     res.status(200).json({ mensaje: 'Contraseña actualizada correctamente.' });
   } catch (error) {
@@ -83,4 +82,3 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ error: 'Error al restablecer la contraseña.' });
   }
 };
-
