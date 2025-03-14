@@ -29,8 +29,14 @@ export const getEvent = async (req, res) => {
 // Crear un nuevo evento
 export const createEvent = async (req, res) => {
   try {
-    const { name, event_state_id, type_of_event_id, location_id, start_time, end_time } = req.body;
-    const newEvent = await EventModel.createEvent(name, event_state_id, type_of_event_id, location_id, start_time, end_time);
+    const { name, event_state_id, type_of_event_id, location_id, user_id_created_by } = req.body;
+
+    // Verificar que `user_id_created_by` está presente
+    if (!user_id_created_by) {
+      return res.status(400).json({ error: 'El campo user_id_created_by es obligatorio' });
+    }
+
+    const newEvent = await EventModel.createEvent(name, event_state_id, type_of_event_id, location_id, user_id_created_by);
     res.status(201).json(newEvent);
   } catch (error) {
     console.error(error);
@@ -42,11 +48,14 @@ export const createEvent = async (req, res) => {
 export const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, event_state_id, type_of_event_id, location_id, start_time, end_time } = req.body;
-    const updatedEvent = await EventModel.updateEvent(id, name, event_state_id, type_of_event_id, location_id, start_time, end_time);
+    const { name, event_state_id, type_of_event_id, location_id } = req.body;
+
+    const updatedEvent = await EventModel.updateEvent(id, name, event_state_id, type_of_event_id, location_id);
+
     if (!updatedEvent) {
       return res.status(404).json({ error: 'Evento no encontrado' });
     }
+
     res.status(200).json(updatedEvent);
   } catch (error) {
     console.error(error);
