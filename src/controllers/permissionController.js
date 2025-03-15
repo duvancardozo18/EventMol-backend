@@ -35,6 +35,7 @@ export const getRolePermissions = async (req, res) => {
   }
 };
 
+
 // Asignar permisos a un rol
 export const assignPermissionsToRole = async (req, res) => {
   try {
@@ -53,3 +54,5 @@ export const assignPermissionsToRole = async (req, res) => {
     res.status(500).json({ error: 'Error al asignar permisos al rol.' });
   }
 };
+
+

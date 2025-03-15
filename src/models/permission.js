@@ -9,9 +9,11 @@ export const getPermissions = async () => {
 // Obtener permisos de un rol específico
 export const getRolePermissions = async (id_role) => {
   const result = await pool.query(
-    `SELECT p.* FROM permissions p
-     JOIN role_permissions rp ON p.id_permission = rp.permission_id
-     WHERE rp.id_role = $1`,
+    `SELECT p.*, r.name AS role_name, r.description AS role_description
+      FROM permissions p
+      JOIN role_permissions rp ON p.id_permission = rp.permission_id
+      JOIN roles r ON rp.id_role = r.id_role
+      WHERE rp.id_role = $1;`,
     [id_role]
   );
   return result.rows;
