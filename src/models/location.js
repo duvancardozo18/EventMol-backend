@@ -13,21 +13,21 @@ export const getLocationById = async (id_location) => {
 };
 
 // Crear una nueva ubicación
-export const createLocation = async (name, description, quantity_available, price, address) => {
+export const createLocation = async (name, description, price, address) => {
   const result = await pool.query(`
-    INSERT INTO location (name, description, quantity_available, price, address)
-    VALUES ($1, $2, $3, $4, $5) RETURNING *
-  `, [name, description, quantity_available, price, address]);
+    INSERT INTO location (name, description, price, address)
+    VALUES ($1, $2, $3, $4) RETURNING *
+  `, [name, description, price, address]);
   return result.rows[0];
 };
 
 // Actualizar una ubicación
-export const updateLocation = async (id_location, name, description, quantity_available, price, address) => {
+export const updateLocation = async (id_location, name, description, price, address) => {
   const result = await pool.query(`
     UPDATE location 
-    SET name = $1, description = $2, quantity_available = $3, price = $4, address = $5
-    WHERE id_location = $6 RETURNING *
-  `, [name, description, quantity_available, price, address, id_location]);
+    SET name = $1, description = $2, price = $3, address = $4
+    WHERE id_location = $5 RETURNING *
+  `, [name, description, price, address, id_location]);
   return result.rows[0];
 };
 
