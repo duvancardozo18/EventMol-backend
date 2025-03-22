@@ -123,3 +123,18 @@ export const updateRolePermissions = async (id_role, newPermissions) => {
     client.release();
   }
 };
+
+export const getRolesWithPermissions = async () => {
+  const result = await pool.query(`
+    SELECT r.id_role, r.name AS role_name, r.description AS role_description,
+           json_agg(
+             json_build_object('id_permission', p.id_permission, 'name', p.name, 'description', p.description)
+           ) AS permissions
+    FROM roles r
+    LEFT JOIN role_permissions rp ON r.id_role = rp.id_role
+    LEFT JOIN permissions p ON rp.permission_id = p.id_permission
+    GROUP BY r.id_role, r.name, r.description
+    ORDER BY r.id_role ASC;
+  `);
+  return result.rows;
+};

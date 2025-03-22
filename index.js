@@ -14,6 +14,9 @@ import statisticsRoutes from './src/routes/statisticsRoutes.js';
 import resourceRoutes from './src/routes/resourceRoutes.js';
 import eventResourceRoutes from './src/routes/eventResourceRoutes.js'
 import typeOfEventRoutes from './src/routes/typeOfEventRoutes.js'
+import eventResourceRoutes from './src/routes/eventResourceRoutes.js';
+import participantsRoutes from './src/routes/participantsRoutes.js';
+import invitationHandlerRoutes from './src/routes/invitationHandlerRoutes.js';
 
 // 1. Cargar variables de entorno
 dotenv.config();
@@ -48,11 +51,88 @@ app.use('/api', statisticsRoutes);
 app.use('/api', resourceRoutes);
 app.use('/api', eventResourceRoutes);
 app.use('/api', typeOfEventRoutes);
+app.use('/api', participantsRoutes);
+app.use('/api', invitationHandlerRoutes);
 
 // 6. Ruta inicial para verificar el servidor
-app.get('/', (req, res) => {
-  res.send('API funcionando 🚀');
+// app.get('/', (req, res) => {
+//   res.send('API funcionando 🚀');
+// });
+// Ruta inicial para listar todas las rutas y sus métodos
+app.get("/", (req, res) => {
+  const routes = [];
+
+  app._router.stack.forEach((middleware) => {
+      if (middleware.route) {
+          const methods = Object.keys(middleware.route.methods).join(", ").toUpperCase();
+          routes.push({ method: methods, path: middleware.route.path });
+      } else if (middleware.name === "router") {
+          middleware.handle.stack.forEach((handler) => {
+              if (handler.route) {
+                  const methods = Object.keys(handler.route.methods).join(", ").toUpperCase();
+                  routes.push({ method: methods, path: handler.route.path });
+              }
+          });
+      }
+  });
+
+  let html = `
+      <html>
+      <head>
+          <title>Eventos Pichote Routes</title>
+          <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 20px; transition: background 0.3s, color 0.3s; }
+              .dark-mode { background-color: #222; color: white; }
+              h2 { color: rgb(14, 143, 10); }
+              .dark-mode h2 { color: rgb(50, 205, 50); }
+              table { width: 80%; margin: auto; border-collapse: collapse; }
+              th, td { border: 1px solid black; padding: 10px; text-align: left; }
+              th { background-color: rgb(14, 143, 10); color: white; }
+              tr:nth-child(even) { background-color: #f2f2f2; }
+              .dark-mode tr:nth-child(even) { background-color: #444; }
+              .dark-mode table { border: 1px solid white; }
+              button { padding: 8px 12px; margin: 5px; cursor: pointer; border-radius: 5px; font-size: 14px; border: none; }
+              .copy-btn { background-color: rgb(14, 143, 10); color: white; }
+              .theme-btn { background-color: rgb(14, 143, 10); color: white; }
+              .dark-mode .theme-btn { background-color: #888; color: black; }
+          </style>
+      </head>
+      <body>
+          <h2>Eventos Pichote Routes</h2>
+          <button class="theme-btn" onclick="toggleTheme()">Dark Mode</button>
+          <table>
+              <tr><th>Método</th><th>Ruta</th><th>Acción</th></tr>`;
+
+  routes.forEach((route) => {
+      html += `<tr>
+                  <td>${route.method}</td>
+                  <td>${route.path}</td>
+                  <td><button class="copy-btn" onclick="copyToClipboard('${route.path}')">Copy</button></td>
+              </tr>`;
+  });
+
+  html += `
+          </table>
+
+          <script>
+              function copyToClipboard(text) {
+                  navigator.clipboard.writeText(text).then(() => {
+                      alert("Ruta copiada: " + text);
+                  }).catch(err => console.error("Error al copiar", err));
+              }
+
+              function toggleTheme() {
+                  document.body.classList.toggle("dark-mode");
+              }
+          </script>
+      </body>
+      </html>
+  `;
+
+  res.send(html);
 });
+
+
 
 // 7. Manejo de errores para rutas no encontradas
 app.use((req, res, next) => {
