@@ -24,6 +24,11 @@ export const createUser = async (userData) => {
     id_role, // El rol ahora se inserta en user_role
   } = userData;
 
+  // Validar si falta el campo id_role
+  if (!id_role) {
+    throw new Error("Falta asignar rol");
+  }
+
   // Insertar en la tabla `users`
   const userResult = await pool.query(
     `INSERT INTO users (name, last_name, email, email_verified, password, created_at)
@@ -71,7 +76,7 @@ export const verifyEmail = async (email) => {
     [email]
   );
   
-  console.log('Resultado de la actualización:', result.rows); // 👀 Ver qué retorna
+  console.log('Resultado de la actualización:', result.rows); //  Ver qué retorna
 
   return result.rows[0];
 };

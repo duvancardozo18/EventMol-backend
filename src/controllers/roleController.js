@@ -96,3 +96,13 @@ export const deleteRole = async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar el rol.' });
   }
 };
+
+export const getRolesWithPermissions = async (req, res) => {
+  try {
+    const roles = await RoleModel.getRolesWithPermissions();
+    res.status(200).json({ roles });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener los roles con sus permisos.' });
+  }
+};

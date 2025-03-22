@@ -8,7 +8,7 @@ export const mailOptions = (email, resetURL) => ({
             <h2 style="margin: 0;">🔒 Recuperación de Contraseña</h2>
         </div>
         <div style="padding: 20px;">
-            <p style="font-size: 18px; color: #333;"><b>Hola,</b></p>
+            <p style="font-size: 18px; color: #333;"><b>Hola ${email},</b></p>
             <p style="color: #555;">Has solicitado restablecer tu contraseña. Para continuar, haz clic en el siguiente botón:</p>
             <a href="${resetURL}" style="display: inline-block; background-color: #28a745; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-size: 16px; margin-top: 10px;">
             🔗 Restablecer Contraseña
