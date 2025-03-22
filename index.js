@@ -12,6 +12,8 @@ import permissionsRoutes from './src/routes/permissionRoutes.js';
 import invitationRoutes from './src/routes/invitationRoutes.js';
 import statisticsRoutes from './src/routes/statisticsRoutes.js';
 import resourceRoutes from './src/routes/resourceRoutes.js';
+import eventResourceRoutes from './src/routes/eventResourceRoutes.js'
+import typeOfEventRoutes from './src/routes/typeOfEventRoutes.js'
 import eventResourceRoutes from './src/routes/eventResourceRoutes.js';
 import participantsRoutes from './src/routes/participantsRoutes.js';
 import invitationHandlerRoutes from './src/routes/invitationHandlerRoutes.js';
@@ -48,6 +50,7 @@ app.use('/api', invitationRoutes);
 app.use('/api', statisticsRoutes);
 app.use('/api', resourceRoutes);
 app.use('/api', eventResourceRoutes);
+app.use('/api', typeOfEventRoutes);
 app.use('/api', participantsRoutes);
 app.use('/api', invitationHandlerRoutes);
 
