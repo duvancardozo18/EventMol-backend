@@ -13,6 +13,7 @@ import invitationRoutes from './src/routes/invitationRoutes.js';
 import statisticsRoutes from './src/routes/statisticsRoutes.js';
 import resourceRoutes from './src/routes/resourceRoutes.js';
 import eventResourceRoutes from './src/routes/eventResourceRoutes.js'
+import typeOfEventRoutes from './src/routes/typeOfEventRoutes.js'
 
 // 1. Cargar variables de entorno
 dotenv.config();
@@ -46,6 +47,7 @@ app.use('/api', invitationRoutes);
 app.use('/api', statisticsRoutes);
 app.use('/api', resourceRoutes);
 app.use('/api', eventResourceRoutes);
+app.use('/api', typeOfEventRoutes);
 
 // 6. Ruta inicial para verificar el servidor
 app.get('/', (req, res) => {
