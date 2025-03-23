@@ -25,8 +25,15 @@ const app = express();
 const PORT = process.env.PORT || 7777;
 
 // 3. Configuración de CORS (permite solo el frontend en http://localhost:5173)
+const allowedOrigins = [
+    process.env.URL_FRONT_WEB_DEV,
+    process.env.URL_FRONT_MOVIL_DEV,
+    process.env.URL_FRONT_WEB_PROD,
+    process.env.URL_FRONT_MOVIL_PROD
+  ].filter(Boolean); // Filtra valores `undefined` o vacíos
+
 const corsOptions = {
-  origin: ['http://localhost:5173'], // Cambiar esto si el frontend está en otro puerto
+  origin: [allowedOrigins], // Cambiar esto si el frontend está en otro puerto
   methods: 'GET,POST,PUT,DELETE',
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
