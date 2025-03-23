@@ -37,7 +37,12 @@ app.use(express.json()); // Para parsear JSON
 app.use(express.urlencoded({ extended: true })); // Para datos del formulario
 app.use(morgan('dev')); // Logger HTTP para desarrollo
 
-// 5. Importar y usar rutas
+// 5a. Ruta para el mensaje en /api
+app.get('/api', (req, res) => {
+    res.json({ message: 'API funcionando correctamente 🚀' });
+  });
+
+// 5b. Importar y usar rutas
 app.use('/api', userRoutes);
 app.use('/api', eventRoutes);
 app.use('/api', locationRoutes);
