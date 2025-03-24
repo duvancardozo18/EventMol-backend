@@ -16,6 +16,7 @@ import eventResourceRoutes from './src/routes/eventResourceRoutes.js'
 import typeOfEventRoutes from './src/routes/typeOfEventRoutes.js'
 import participantsRoutes from './src/routes/participantsRoutes.js';
 import invitationHandlerRoutes from './src/routes/invitationHandlerRoutes.js';
+import categoryRoutes from './src/routes/categoryRoutes.js';
 
 // 1. Cargar variables de entorno
 dotenv.config();
@@ -64,6 +65,7 @@ app.use('/api', eventResourceRoutes);
 app.use('/api', typeOfEventRoutes);
 app.use('/api', participantsRoutes);
 app.use('/api', invitationHandlerRoutes);
+app.use('/api', categoryRoutes);
 
 // 6. Ruta inicial para verificar el servidor
 // app.get('/', (req, res) => {
