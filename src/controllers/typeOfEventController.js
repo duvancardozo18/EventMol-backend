@@ -29,8 +29,8 @@ export const getTypeOfEvent = async (req, res) => {
 // Crear un nuevo tipo de evento
 export const createTypeOfEvent = async (req, res) => {
   try {
-    const { event_type, description, start_time, end_time, max_participants, video_conference_link, price } = req.body;
-    const newType = await TypeOfEventModel.createTypeOfEvent(event_type, description, start_time, end_time, max_participants, video_conference_link, price);
+    const { event_type, description, start_time, end_time, max_participants, video_conference_link, price, category_id } = req.body;
+    const newType = await TypeOfEventModel.createTypeOfEvent(event_type, description, start_time, end_time, max_participants, video_conference_link, price, category_id);
     res.status(201).json(newType);
   } catch (error) {
     console.error(error);
@@ -42,9 +42,9 @@ export const createTypeOfEvent = async (req, res) => {
 export const updateTypeOfEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { event_type, description, start_time, end_time, max_participants, video_conference_link, price } = req.body;
+    const { event_type, description, start_time, end_time, max_participants, video_conference_link, price, category_id } = req.body;
 
-    const updatedType = await TypeOfEventModel.updateTypeOfEvent(id, event_type, description, start_time, end_time, max_participants, video_conference_link, price);
+    const updatedType = await TypeOfEventModel.updateTypeOfEvent(id, event_type, description, start_time, end_time, max_participants, video_conference_link, price, category_id);
 
     if (!updatedType) {
       return res.status(404).json({ error: 'Tipo de evento no encontrado' });
