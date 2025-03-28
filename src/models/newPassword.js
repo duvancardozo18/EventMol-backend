@@ -6,7 +6,7 @@ export const savePasswordResetToken = async (email, token) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem(`password_reset_${email}`, token);
   } else {
-    console.warn("⚠️ No se puede acceder a localStorage en este entorno.");
+    console.warn("No se puede acceder a localStorage en este entorno.");
   }
 };
 
@@ -30,23 +30,44 @@ export const validatePasswordResetToken = (email, token) => {
     const storedToken = localStorage.getItem(`password_reset_${email}`);
     return storedToken === token;
   }
-  console.warn("⚠️ No se puede acceder a localStorage en este entorno.");
+  console.warn("No se puede acceder a localStorage en este entorno.");
   return false;
 };
 
-// Actualizar contraseña después de verificación
-export const updatePassword = async (email, newPassword) => {
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
+// // Actualizar contraseña después de verificación - MODIFICADO
+// export const updatePassword = async (email, newPassword) => {
+//   // Asegurarnos de que el salt sea consistente con el usado en userController
+//   const salt = await bcrypt.genSalt(10);
+//   const hashedPassword = await bcrypt.hash(newPassword, salt);
 
+//   // Actualizar la contraseña en la base de datos
+//   const result = await pool.query(
+//     `UPDATE users SET password = $1 WHERE email = $2 RETURNING *`,
+//     [hashedPassword, email]
+//   );
+
+//   // Limpiar el token de localStorage si existe
+//   if (typeof window !== 'undefined') {
+//     localStorage.removeItem(`password_reset_${email}`);
+//   }
+
+//   return result.rows[0];  
+// };
+
+
+export const updatePassword = async (email, newPassword) => {
+  // 1. Hasheo compatible al 100% con el sistema de login
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  
+  // 2. Actualización directa en BD
   const result = await pool.query(
     `UPDATE users SET password = $1 WHERE email = $2 RETURNING *`,
     [hashedPassword, email]
   );
 
-  // Eliminar token de localStorage después de cambiar la contraseña
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(`password_reset_${email}`);
-  }
-
+  // 3. Verificación EXTREMA (debe imprimir true)
+  const match = await bcrypt.compare(newPassword, result.rows[0].password);
+  console.log('🔥 Validación interna:', match);
+  
   return result.rows[0];
 };

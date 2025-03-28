@@ -3,14 +3,12 @@ import bcrypt from 'bcryptjs';
 import * as PasswordModel from '../models/newPassword.js';
 import * as UserModel from '../models/user.js';
 import transporter from '../config/emailConfig.js';
-import { mailOptions } from '../helpers/newPasswordMailHelper.js';
+import { mailOptions } from '../helpers/newPasswordMailHelper.js';  // Asegúrate de importar correctamente el helper
 
 // Mapa temporal en memoria para almacenar los tokens de recuperación
 const passwordResetTokens = new Map();
 
-/**
- * Genera un token de recuperación y envía un email con el enlace.
- */
+//
 export const requestPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
@@ -29,14 +27,17 @@ export const requestPasswordReset = async (req, res) => {
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = Date.now() + 3600000; // Expira en 1 hora
 
-    // Guardar el token en memoria en lugar de la base de datos
+    // Guardar el token en memoria
     passwordResetTokens.set(resetToken, { email, expiresAt });
 
-    // Generar el enlace de recuperación
+    // Generar el enlace de recuperación (aquí pasamos el token en la URL)
     const resetURL = `http://localhost:7777/api/reset-password/${resetToken}`;
 
-    // Enviar correo con el enlace
-    await transporter.sendMail(mailOptions(email, resetURL));
+    // Utilizamos mailOptions para generar el contenido del correo
+    const options = mailOptions(email, resetURL);  // Aquí estamos llamando al helper para obtener las opciones del correo
+
+    // Enviar el correo
+    await transporter.sendMail(options);
 
     res.status(200).json({ mensaje: 'Correo de recuperación enviado.' });
   } catch (error) {
@@ -45,13 +46,11 @@ export const requestPasswordReset = async (req, res) => {
   }
 };
 
-/**
- * Verifica si el token es válido y permite cambiar la contraseña.
- */
+//tengo ambre XD
 export const resetPassword = async (req, res) => {
   try {
-    const { token } = req.params;
-    const { newPassword } = req.body;
+    const { token } = req.params;  // Token recibido desde la URL
+    const { newPassword } = req.body; // Nueva contraseña del usuario
 
     // Validar si el token existe y no ha expirado
     const tokenData = passwordResetTokens.get(token);
