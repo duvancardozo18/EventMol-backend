@@ -70,7 +70,7 @@ export const createEvent = async (req, res) => {
         return res.status(400).json({ error: 'Error al subir la imagen' });
       }
 
-      const { name, event_state_id, type_of_event_id, location_id, user_id_created_by } = req.body;
+      const { name, event_state_id, user_id_created_by } = req.body;
 
       // Verificar que `user_id_created_by` está presente
       if (!user_id_created_by) {
@@ -80,11 +80,10 @@ export const createEvent = async (req, res) => {
       // Subir la imagen a Wasabi y obtener la URL firmada
       const image_url = req.file ? await uploadToWasabi(req.file) : null;
 
-      // Si estás usando un array, asegúrate de pasar la URL como un array
       const image_url_array = image_url ? `{${image_url}}` : null;
 
       // Crear el evento, incluyendo la URL de la imagen
-      const newEvent = await EventModel.createEvent(name, event_state_id, type_of_event_id, location_id, user_id_created_by, image_url_array);
+      const newEvent = await EventModel.createEvent(name, event_state_id, user_id_created_by, image_url_array);
       res.status(201).json(newEvent);
     });
   } catch (error) {
@@ -125,15 +124,18 @@ export const updateEvent = async (req, res) => {
     const { id } = req.params;
     const { name, event_state_id, type_of_event_id, location_id } = req.body;
 
-    let image_url = null;
+    if (!name || !event_state_id || !type_of_event_id || !location_id) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios para actualizar el evento' });
+    }    
 
     // Si el usuario sube una nueva imagen, la subimos a Wasabi
-    if (req.file) {
-      image_url = await uploadToWasabi(req.file);
-    }
+
+    const image_url = req.file ? await uploadToWasabi(req.file) : null;
+
+    const image_url_array = image_url ? `{${image_url}}` : null;
 
     // Actualizar el evento, incluyendo la URL de la imagen si fue proporcionada
-    const updatedEvent = await EventModel.updateEvent(id, name, event_state_id, type_of_event_id, location_id, image_url);
+    const updatedEvent = await EventModel.updateEvent(id, name, event_state_id, type_of_event_id, location_id, image_url_array);
 
     if (!updatedEvent) {
       return res.status(404).json({ error: 'Evento no encontrado' });
