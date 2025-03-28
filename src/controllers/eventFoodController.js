@@ -16,6 +16,7 @@ export const getFoodByEvent = async (req, res) => {
 export const assignFoodToEvent = async (req, res) => {
   try {
     const { id_event, id_food } = req.body;
+    console.log(req.body)
     const assignedFood = await EventFoodModel.assignFoodToEvent(id_event, id_food);
     res.status(201).json(assignedFood);
   } catch (error) {
@@ -25,23 +26,23 @@ export const assignFoodToEvent = async (req, res) => {
 };
 
 // Actualizar cantidad y tipo de comida en un evento
-export const updateFoodInEvent = async (req, res) => {
-    try {
-      const { id_event, id_food } = req.params;
-      const { new_id_food } = req.body; // Nuevo id_food y cantidad
+// export const updateFoodInEvent = async (req, res) => {
+//     try {
+//       const { id_event, id_food } = req.params;
+//       const { new_id_food } = req.body; // Nuevo id_food y cantidad
   
-      const updatedFood = await EventFoodModel.updateFoodInEvent(id_event, id_food, new_id_food);
+//       const updatedFood = await EventFoodModel.updateFoodInEvent(id_event, id_food, new_id_food);
   
-      if (!updatedFood) {
-        return res.status(404).json({ error: 'Alimento en evento no encontrado o no se pudo actualizar' });
-      }
+//       if (!updatedFood) {
+//         return res.status(404).json({ error: 'Alimento en evento no encontrado o no se pudo actualizar' });
+//       }
   
-      res.status(200).json(updatedFood);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Error al actualizar la comida en el evento' });
-    }
-};        
+//       res.status(200).json(updatedFood);
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({ error: 'Error al actualizar la comida en el evento' });
+//     }
+// };        
   
 // Eliminar un alimento de un evento
 export const removeFoodFromEvent = async (req, res) => {
