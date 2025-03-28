@@ -7,7 +7,7 @@ export const getAllEvents = async () => {
     t.event_type, l.name AS location, e.user_id_created_by, e.image_url
     FROM events e
     JOIN event_state es ON e.event_state_id = es.id_event_state
-    JOIN type_of_event t ON e.type_of_event_id = t.id_type_of_event
+    LEFT JOIN type_of_event t ON e.type_of_event_id = t.id_type_of_event
     LEFT JOIN location l ON e.location_id = l.id_location
   `);
   return result.rows;
