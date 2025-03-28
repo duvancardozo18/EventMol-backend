@@ -13,9 +13,14 @@ export const getResourcesByEvent = async (req, res) => {
 };
 
 // Asignar un recurso a un evento
-export const assignResourceToEvent = async (req, res) => {
+export const handleAssignResourceToEvent = async (req, res) => {
   try {
     const { id_event, id_resource } = req.body;
+
+    if (!id_event || !id_resource) {
+      return res.status(400).json({ error: 'Se requieren id_event e id_resource' });
+    }
+
     const assignedResource = await EventResourceModel.assignResourceToEvent(id_event, id_resource);
     res.status(201).json(assignedResource);
   } catch (error) {
@@ -24,24 +29,25 @@ export const assignResourceToEvent = async (req, res) => {
   }
 };
 
+
 // Actualizar el recurso de un evento (cambiar `id_resource`)
-export const updateResourceInEvent = async (req, res) => {
-  try {
-    const { id_event, id_resource } = req.params;
-    const { new_id_resource } = req.body;
+// export const updateResourceInEvent = async (req, res) => {
+//   try {
+//     const { id_event, id_resource } = req.params;
+//     const { new_id_resource } = req.body;
 
-    const updatedResource = await EventResourceModel.updateResourceInEvent(id_event, id_resource, new_id_resource);
+//     const updatedResource = await EventResourceModel.updateResourceInEvent(id_event, id_resource, new_id_resource);
 
-    if (!updatedResource) {
-      return res.status(404).json({ error: 'Recurso en evento no encontrado o no se pudo actualizar' });
-    }
+//     if (!updatedResource) {
+//       return res.status(404).json({ error: 'Recurso en evento no encontrado o no se pudo actualizar' });
+//     }
 
-    res.status(200).json(updatedResource);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error al actualizar el recurso en el evento' });
-  }
-};
+//     res.status(200).json(updatedResource);
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: 'Error al actualizar el recurso en el evento' });
+//   }
+// };
 
 // Eliminar un recurso de un evento
 export const removeResourceFromEvent = async (req, res) => {

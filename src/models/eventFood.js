@@ -3,7 +3,7 @@ import pool from '../config/bd.js';
 // Obtener todos los alimentos de un evento
 export const getFoodByEvent = async (id_event) => {
   const result = await pool.query(`
-    SELECT ef.id_event, f.id_food, f.name
+    SELECT ef.id_event, f.id_food, f.name, f.quantity_available, f.price
     FROM event_food ef
     JOIN food f ON ef.id_food = f.id_food
     WHERE ef.id_event = $1
@@ -21,15 +21,15 @@ export const assignFoodToEvent = async (id_event, id_food) => {
 };
 
 // Actualizar cantidad y tipo de comida en un evento
-export const updateFoodInEvent = async (id_event, id_food, new_id_food) => {
-    const result = await pool.query(`
-      UPDATE event_food 
-      SET id_food = $1
-      WHERE id_event = $2 AND id_food = $3 RETURNING *
-    `, [new_id_food, id_event, id_food]);
+// export const updateFoodInEvent = async (id_event, id_food, new_id_food) => {
+//     const result = await pool.query(`
+//       UPDATE event_food 
+//       SET id_food = $1
+//       WHERE id_event = $2 AND id_food = $3 RETURNING *
+//     `, [new_id_food, id_event, id_food]);
   
-    return result.rows[0];
-};  
+//     return result.rows[0];
+// };  
 
 // Eliminar un alimento de un evento
 export const removeFoodFromEvent = async (id_event, id_food) => {
