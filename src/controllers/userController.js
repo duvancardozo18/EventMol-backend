@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
 import * as UserModel from '../models/user.js';
 import transporter from '../config/emailConfig.js';
 import { mailOptions } from '../helpers/deleteMailHelper.js';
 import { verificationMailOptions } from '../helpers/verificationEmailMailHelper.js';
+import * as authService from '../services/authService.js';
 
 // Obtener usuarios con sus roles
 export const getUsers = async (req, res) => {
@@ -37,10 +37,10 @@ export const createUser = async (req, res) => {
     const options = verificationMailOptions(email, verificationURL);
 
     // Enviar email de verificación
-  await transporter.sendMail(options);
+    await transporter.sendMail(options);
 
     // Encriptar contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await authService.hashPassword(password);
 
     // Crear usuario y asignarle rol en `user_role`
     const newUser = await UserModel.createUser({
@@ -66,55 +66,44 @@ export const verifyEmail = async (req, res) => {
   const { token } = req.params;
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const email = decoded.email;
-
-    await UserModel.verifyEmail(email);
-
+    await authService.verifyUserEmail(token);
     res.status(200).json({ mensaje: 'Email verificado exitosamente.' });
   } catch (error) {
     res.status(400).json({ error: 'Token inválido o expirado.' });
   }
 };
 
-// Inicio de sesión con `user_role`
+// Inicio de sesión con `user_role` y establecimiento de cookie
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Buscar usuario por email
-    const user = await UserModel.getUserWithPassword(email);
-    if (!user) {
-      return res.status(400).json({ error: 'Credenciales incorrectas.' });
-    }
-
-    // Validar contraseña
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ error: 'Credenciales incorrectas.' });
-    }
-
-    // Generar token JWT para sesión
-    const token = jwt.sign(
-      { id_user: user.id_user, email: user.email, id_role: user.id_role },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
-
+    // El tercer parámetro (res) permite establecer la cookie
+    const authResult = await authService.authenticateUser(email, password);
+    authService.setAuthCookie(res, authResult.token);
+    
     res.status(200).json({
       mensaje: 'Inicio de sesión exitoso.',
-      token,
-      usuario: {
-        id_user: user.id_user,
-        email: user.email,
-        name: user.name,
-        role: user.role_name, // Ahora incluye el nombre del rol
-      },
+      usuario: authResult.usuario
     });
 
   } catch (error) {
     console.error(error);
+    if (error.message === 'Credenciales incorrectas') {
+      return res.status(400).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Error al iniciar sesión.' });
+  }
+};
+
+// Cerrar sesión
+export const logoutUser = (req, res) => {
+  try {
+    authService.logoutUser(res);
+    res.status(200).json({ mensaje: 'Sesión cerrada exitosamente.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al cerrar sesión.' });
   }
 };
 
