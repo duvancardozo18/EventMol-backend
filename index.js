@@ -17,6 +17,7 @@ import typeOfEventRoutes from './src/routes/typeOfEventRoutes.js'
 import participantsRoutes from './src/routes/participantsRoutes.js';
 import invitationHandlerRoutes from './src/routes/invitationHandlerRoutes.js';
 import categoryRoutes from './src/routes/categoryRoutes.js';
+import cookieParser from 'cookie-parser';
 
 // 1. Cargar variables de entorno
 dotenv.config();
@@ -42,6 +43,7 @@ app.use(cors(corsOptions));
 
 // 4. Middlewares generales
 app.use(express.json()); // Para parsear JSON
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true })); // Para datos del formulario
 app.use(morgan('dev')); // Logger HTTP para desarrollo
 
