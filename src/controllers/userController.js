@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import * as UserModel from '../models/user.js';
 import transporter from '../config/emailConfig.js';
 import { mailOptions } from '../helpers/deleteMailHelper.js';
+import { verificationMailOptions } from '../helpers/verificationEmailMailHelper.js';
 
 // Obtener usuarios con sus roles
 export const getUsers = async (req, res) => {
@@ -30,19 +31,13 @@ export const createUser = async (req, res) => {
     const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
     // Construir el enlace de verificación con el token
-    const verificationURL = `http://localhost:5173/verifyAccount/${token}`;
+    const verificationURL = `${process.env.URL_FRONT_WEB_DEV}/verifyAccount/${token}`;
 
     // Configurar correo de verificación
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Verificación de Cuenta EventosIA ✔',
-      html: `<p>Haz clic en el siguiente enlace para verificar tu cuenta:</p>
-             <a href="${verificationURL}">Verificar mi Cuenta</a>`,
-    };
+    const options = verificationMailOptions(email, verificationURL);
 
-    // Enviar email de verificación antes de registrar usuario
-    await transporter.sendMail(mailOptions);
+    // Enviar email de verificación
+  await transporter.sendMail(options);
 
     // Encriptar contraseña
     const hashedPassword = await bcrypt.hash(password, 10);

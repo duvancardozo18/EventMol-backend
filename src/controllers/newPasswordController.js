@@ -8,7 +8,6 @@ import { mailOptions } from '../helpers/newPasswordMailHelper.js';  // Asegúrat
 // Mapa temporal en memoria para almacenar los tokens de recuperación
 const passwordResetTokens = new Map();
 
-//
 export const requestPasswordReset = async (req, res) => {
   try {
     const { email } = req.body;
@@ -46,7 +45,6 @@ export const requestPasswordReset = async (req, res) => {
   }
 };
 
-//tengo ambre XD
 export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;  // Token recibido desde la URL
