@@ -13,18 +13,55 @@ export const getAllEvents = async () => {
   return result.rows;
 };
 
-// Obtener un evento por ID
+// Obtener un evento por ID con detalles completos del tipo de evento
 export const getEventById = async (id_event) => {
   const result = await pool.query(`
-    SELECT e.*, es.state_name AS state, t.event_type, l.name AS location, e.user_id_created_by, e.image_url
+    SELECT 
+      e.id_event,
+      e.name AS event_name,
+      e.image_url,
+
+      -- Estado del evento
+      es.state_name AS state,
+
+      -- Datos del tipo de evento
+      t.event_type,
+      t.description AS event_type_description,
+      t.start_time,
+      t.end_time,
+      t.max_participants,
+      t.video_conference_link,
+      t.price AS event_price,
+
+      -- Datos de la categoría (sin category_id)
+      c.name AS category_name,
+
+      -- Datos de la ubicación (sin id_location)
+      l.name AS location_name,
+      l.description AS location_description,
+      l.price AS location_price,
+      l.address AS location_address,
+
+      -- Datos del usuario creador (sin user_id_created_by)
+      u.name AS user_name,
+      u.last_name AS user_last_name
+
     FROM events e
     JOIN event_state es ON e.event_state_id = es.id_event_state
     LEFT JOIN type_of_event t ON e.type_of_event_id = t.id_type_of_event
     LEFT JOIN location l ON e.location_id = l.id_location
+    LEFT JOIN users u ON e.user_id_created_by = u.id_user
+    LEFT JOIN categories c ON t.category_id = c.id_category
     WHERE e.id_event = $1
   `, [id_event]);
+
   return result.rows[0];
 };
+
+
+
+
+
 
 // Crear un nuevo evento
 export const createEvent = async (name, event_state_id, user_id_created_by, image_url) => {
