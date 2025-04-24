@@ -33,9 +33,11 @@ export const getEventById = async (id_event) => {
       e.image_url,
 
       -- Estado del evento
+      es.id_event_state,
       es.state_name AS state,
 
       -- Datos del tipo de evento
+      t.id_type_of_event,
       t.event_type,
       t.description AS event_type_description,
       t.start_time,
@@ -43,17 +45,21 @@ export const getEventById = async (id_event) => {
       t.max_participants,
       t.video_conference_link,
       t.price AS event_price,
+      t.category_id,
 
-      -- Datos de la categoría (sin category_id)
+      -- Datos de la categoría
+      c.id_category,
       c.name AS category_name,
 
-      -- Datos de la ubicación (sin id_location)
+      -- Datos de la ubicación
+      l.id_location,
       l.name AS location_name,
       l.description AS location_description,
       l.price AS location_price,
       l.address AS location_address,
 
-      -- Datos del usuario creador (sin user_id_created_by)
+      -- Datos del usuario creador
+      u.id_user AS user_id_created_by,
       u.name AS user_name,
       u.last_name AS user_last_name
 
@@ -68,7 +74,6 @@ export const getEventById = async (id_event) => {
 
   return result.rows[0];
 };
-
 
 
 
