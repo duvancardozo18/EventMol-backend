@@ -3,8 +3,19 @@ import pool from '../config/bd.js';
 // Obtener todos los eventos
 export const getAllEvents = async () => {
   const result = await pool.query(`
-    SELECT e.id_event, e.name, es.state_name AS state, 
-    t.event_type, l.name AS location, e.user_id_created_by, e.image_url
+    SELECT 
+      e.id_event, 
+      e.name, 
+      es.state_name AS state, 
+      t.event_type, 
+      t.id_type_of_event AS type_of_event_id,
+      t.start_time,
+      t.end_time,
+      t.max_participants,
+      t.video_conference_link,
+      l.name AS location, 
+      e.user_id_created_by, 
+      e.image_url
     FROM events e
     JOIN event_state es ON e.event_state_id = es.id_event_state
     LEFT JOIN type_of_event t ON e.type_of_event_id = t.id_type_of_event
