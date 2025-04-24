@@ -1,7 +1,7 @@
 import * as EventModel from '../models/event.js';
 import multer from 'multer';
-import { S3, GetObjectCommand } from '@aws-sdk/client-s3'; // Asegúrate de importar GetObjectCommand
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'; // Importar getSignedUrl
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import dotenv from 'dotenv';
 
 dotenv.config(); // Cargar las variables de entorno
@@ -10,51 +10,50 @@ dotenv.config(); // Cargar las variables de entorno
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Configuración del cliente S3 para interactuar con Wasabi
-const s3 = new S3({
-  endpoint: 'https://s3.wasabisys.com',
+// Configuración del cliente S3 para interactuar con Supabase
+const s3Client = new S3Client({
+  forcePathStyle: true,
+  endpoint: process.env.SUPABASE_STORAGE_URL,  // Correcto: Endpoint de Supabase
+  region: 'us-east-1',  // Región de Supabase
   credentials: {
-    accessKeyId: process.env.WASABI_ACCESS_KEY,  // Usar variable de entorno para la clave de acceso
-    secretAccessKey: process.env.WASABI_SECRET_KEY,  // Usar variable de entorno para la clave secreta
+    accessKeyId: process.env.SUPABASE_ACCESS_KEY,  // Usar variable de entorno para la clave de acceso
+    secretAccessKey: process.env.SUPABASE_SECRET_KEY,  // Usar variable de entorno para la clave secreta
   },
-  region: 'us-east-1',  // Región de Wasabi
 });
 
-// Subir archivo a Wasabi
-const uploadToWasabi = async (file) => {
-  const params = {
-    Bucket: 'eventsia',  // Nombre de tu bucket en Wasabi
-    Key: `event_images/${file.originalname}`,  // Nombre del archivo en el bucket
-    Body: file.buffer,  // Contenido del archivo
-    ContentType: file.mimetype,  // Tipo de contenido
-    ACL: 'public-read',  // Hace la imagen accesible públicamente
-  };
-
-  console.log("Intentando subir el archivo a Wasabi con estos parámetros:", params); // Log para depuración
-
+// Subir archivo a Supabase usando el protocolo S3
+const uploadToSupabase = async (file) => {
   try {
-    // Subir el archivo a Wasabi
-    await s3.putObject(params);  // Usamos putObject para subir archivos
+    // Generar un nombre único para el archivo
+    const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+    const bucketName = 'eventos'; // Nombre de tu bucket en Supabase
+    const filePath = `event_images/${fileName}`;
+
+    console.log(`Intentando subir archivo: ${fileName} al bucket: ${bucketName}`);
+
+    // Comando para subir el objeto al bucket correcto
+    const putCommand = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: filePath,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    });
+
+    // Ejecutar el comando de subida
+    await s3Client.send(putCommand);
     console.log('Archivo subido exitosamente');
 
-    // Generar la URL firmada con un tiempo máximo de expiración (7 días)
-    const signedUrlParams = {
-      Bucket: params.Bucket,
-      Key: params.Key,
-      Expires: 604800,  // 7 días en segundos (604800 segundos)
-    };
+    // Construir la URL pública del archivo
+    const publicUrl = `https://${process.env.SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/${bucketName}/${filePath}`;
+    console.log('URL pública del archivo:', publicUrl);
 
-    // Crear el comando para obtener el objeto
-    const command = new GetObjectCommand(signedUrlParams);
-
-    // Generar la URL firmada
-    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 604800 });
-
-    console.log('URL firmada:', signedUrl);
-    return signedUrl;  // Retornar la URL firmada
+    return publicUrl;
   } catch (error) {
-    console.error('Error al subir la imagen a Wasabi:', error); // Log de error
-    throw new Error('Error al subir la imagen a Wasabi');
+    console.error('Error detallado al subir la imagen:', error);
+    if (error.$response) {
+      console.error('Respuesta cruda:', error.$response);
+    }
+    throw new Error(`Error al subir la imagen: ${error.message}`);
   }
 };
 
@@ -67,27 +66,35 @@ export const createEvent = async (req, res) => {
     // Usar el middleware para manejar la subida de la imagen
     uploadImage(req, res, async (err) => {
       if (err) {
-        return res.status(400).json({ error: 'Error al subir la imagen' });
+        console.error('Error en middleware multer:', err);
+        return res.status(400).json({ error: 'Error al procesar la imagen' });
       }
 
       const { name, event_state_id, user_id_created_by } = req.body;
 
-      // Verificar que `user_id_created_by` está presente
+      // Verificar campos obligatorios
       if (!user_id_created_by) {
         return res.status(400).json({ error: 'El campo user_id_created_by es obligatorio' });
       }
 
-      // Subir la imagen a Wasabi y obtener la URL firmada
-      const image_url = req.file ? await uploadToWasabi(req.file) : null;
+      let image_url = null;
+      if (req.file) {
+        try {
+          image_url = await uploadToSupabase(req.file);
+        } catch (uploadError) {
+          console.error('Error al subir la imagen:', uploadError);
+          return res.status(500).json({ error: uploadError.message });
+        }
+      }
 
       const image_url_array = image_url ? `{${image_url}}` : null;
 
-      // Crear el evento, incluyendo la URL de la imagen
+      // Crear el evento con la URL de la imagen
       const newEvent = await EventModel.createEvent(name, event_state_id, user_id_created_by, image_url_array);
       res.status(201).json(newEvent);
     });
   } catch (error) {
-    console.error(error);
+    console.error('Error general en createEvent:', error);
     res.status(500).json({ error: 'Error al crear el evento' });
   }
 };
@@ -128,9 +135,8 @@ export const updateEvent = async (req, res) => {
       return res.status(400).json({ error: 'Faltan campos obligatorios para actualizar el evento' });
     }    
 
-    // Si el usuario sube una nueva imagen, la subimos a Wasabi
-
-    const image_url = req.file ? await uploadToWasabi(req.file) : null;
+    // Si el usuario sube una nueva imagen, la subimos a Supabase
+    const image_url = req.file ? await uploadToSupabase(req.file) : null;
 
     const image_url_array = image_url ? `{${image_url}}` : null;
 
