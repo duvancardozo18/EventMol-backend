@@ -10,13 +10,21 @@ export const createParticipant = async (user_id, event_id, participant_status_id
   return result.rows[0];
 };
 
-// Obtener todos los participantes
+// Obtener todos los participantes con la image_url del evento
+// Obtener todos los participantes con image_url, type_of_event_id y start_time
 export const getAllParticipants = async () => {
   const result = await pool.query(
-    `SELECT p.id_participants, u.name AS user_name, e.name AS event_name, ps.status_name 
+    `SELECT p.id_participants, 
+            u.name AS user_name, 
+            e.name AS event_name, 
+            e.image_url AS event_image_url, 
+            e.type_of_event_id, 
+            tof.start_time AS event_start_time,
+            ps.status_name 
      FROM participants p
      JOIN users u ON p.user_id = u.id_user
      JOIN events e ON p.event_id = e.id_event
+     JOIN type_of_event tof ON e.type_of_event_id = tof.id_type_of_event
      JOIN participant_status ps ON p.participant_status_id = ps.id_participant_status
      ORDER BY p.id_participants ASC`
   );
