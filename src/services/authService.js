@@ -88,7 +88,9 @@ export const comparePassword = async (password, hashedPassword) => {
 export const authenticateUser = async (email, password) => {
     const user = await UserModel.getUserWithPassword(email);
     if (!user) throw new Error('Credenciales incorrectas');
-  
+
+    const confirmedEmail = await UserModel.getUserByEmail(email);
+    if (confirmedEmail.email_verified != true) throw new Error(`El email no esta confirmado, debes confirmarlo para poder iniciar sesión`);
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) throw new Error('Credenciales incorrectas');
   

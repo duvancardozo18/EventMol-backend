@@ -13,7 +13,7 @@ const upload = multer({ storage: storage });
 // Configuración del cliente S3 para interactuar con Supabase
 const s3Client = new S3Client({
   forcePathStyle: true,
-  endpoint: 'https://adtfjxrexmnlmtnnoyns.supabase.co/storage/v1/s3',  // Correcto: Endpoint de Supabase
+  endpoint: process.env.SUPABASE_STORAGE_URL,  // Correcto: Endpoint de Supabase
   region: 'us-east-1',  // Región de Supabase
   credentials: {
     accessKeyId: process.env.SUPABASE_ACCESS_KEY,  // Usar variable de entorno para la clave de acceso

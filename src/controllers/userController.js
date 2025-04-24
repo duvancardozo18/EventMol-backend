@@ -89,8 +89,8 @@ export const loginUser = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
-    if (error.message === 'Credenciales incorrectas') {
+    // console.error(error);
+    if (error.message === 'Credenciales incorrectas' || error.message === 'El email no esta confirmado, debes confirmarlo para poder iniciar sesión') {
       return res.status(400).json({ error: error.message });
     }
     res.status(500).json({ error: 'Error al iniciar sesión.' });
