@@ -13,8 +13,10 @@ export const createParticipant = async (user_id, event_id, participant_status_id
 // Obtener todos los participantes
 export const getAllParticipants = async () => {
   const result = await pool.query(
-    `SELECT p.id_participants, 
-            u.name AS user_name, 
+    `SELECT p.id_participants,
+            p.user_id,  
+            u.name AS user_name,
+            u.last_name AS user_last_name,  
             e.name AS event_name, 
             e.image_url AS event_image_url, 
             e.type_of_event_id, 
@@ -29,7 +31,6 @@ export const getAllParticipants = async () => {
   );
   return result.rows;
 };
-
 // Obtener un participante por ID
 export const getParticipantById = async (id) => {
   const result = await pool.query(
