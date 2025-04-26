@@ -80,11 +80,11 @@ export const getEventById = async (id_event) => {
 
 
 // Crear un nuevo evento
-export const createEvent = async (name, event_state_id, user_id_created_by, image_url, location_id) => {
+export const createEvent = async (name, event_state_id, user_id_created_by, image_url, location_id,type_of_event_id) => {
   const result = await pool.query(`
-    INSERT INTO events (name, event_state_id, user_id_created_by, image_url, location_id)
-    VALUES ($1, $2, $3, $4, $5) RETURNING *
-  `, [name, event_state_id, user_id_created_by, image_url,location_id]);
+    INSERT INTO events (name, event_state_id, user_id_created_by, image_url, location_id, type_of_event_id)
+    VALUES ($1, $2, $3, $4, $5 , $6) RETURNING *
+  `, [name, event_state_id, user_id_created_by, image_url,location_id,type_of_event_id]);
   return result.rows[0];
 };
 
