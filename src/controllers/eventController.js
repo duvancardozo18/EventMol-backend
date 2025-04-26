@@ -70,7 +70,7 @@ export const createEvent = async (req, res) => {
         return res.status(400).json({ error: 'Error al procesar la imagen' });
       }
 
-      const { name, event_state_id, user_id_created_by } = req.body;
+      const { name, event_state_id, user_id_created_by, location_id } = req.body;
 
       // Verificar campos obligatorios
       if (!user_id_created_by) {
@@ -90,7 +90,7 @@ export const createEvent = async (req, res) => {
       const image_url_array = image_url ? `{${image_url}}` : null;
 
       // Crear el evento con la URL de la imagen
-      const newEvent = await EventModel.createEvent(name, event_state_id, user_id_created_by, image_url_array);
+      const newEvent = await EventModel.createEvent(name, event_state_id, user_id_created_by, image_url_array, location_id);
       res.status(201).json(newEvent);
     });
   } catch (error) {
