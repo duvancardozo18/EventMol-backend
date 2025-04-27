@@ -43,7 +43,7 @@ export const sendInvitation = async (req, res) => {
         const invitationLink = `${baseUrl}/api/invitacion/${token}`;
 
         // Configurar el email con el nombre del evento
-        const mailOptions = getInvitationMailOptions(user.email, event.name, id_event, token);        
+        const mailOptions = getInvitationMailOptions(user.email, event.event_name, id_event, token);        
 
         // Enviar el correo
         await transporter.sendMail(mailOptions);
