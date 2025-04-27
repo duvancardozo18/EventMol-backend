@@ -11,8 +11,8 @@ export const sendInvitation = async (req, res) => {
         const { id_event, id_user } = req.body;
         const { id_role } = req.user; // Obtiene el rol del usuario autenticado
 
-        // Solo los Gestores de Eventos pueden enviar invitaciones
-        if (id_role !== 2) {
+        // Solo los Administradores (rol 1) y Gestores de Eventos (rol 2) pueden enviar invitaciones
+        if (id_role !== 1 && id_role !== 2) {
             return res.status(403).json({ error: 'No tienes permisos para generar invitaciones.' });
         }
 
@@ -39,7 +39,8 @@ export const sendInvitation = async (req, res) => {
         storeInvitationToken(token, id_event, id_user);
 
         // Enlace de invitación
-        const invitationLink = `http://localhost:7777/api/invitacion/${token}`;
+        const baseUrl = process.env.URL_FRONT_WEB_DEV || 'http://localhost:7777';
+        const invitationLink = `${baseUrl}/api/invitacion/${token}`;
 
         // Configurar el email con el nombre del evento
         const mailOptions = getInvitationMailOptions(user.email, event.name, id_event, token);        

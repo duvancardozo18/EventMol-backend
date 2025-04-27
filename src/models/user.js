@@ -140,3 +140,18 @@ export const deleteUserByEmail = async (email) => {
 
   return result.rows[0]; // Retorna el usuario eliminado
 };
+
+
+// Obtener usuario por ID con información de rol
+export const getUserById = async (id_user) => {
+  const result = await pool.query(
+    `SELECT u.id_user, u.name, u.last_name, u.email, u.email_verified, u.created_at,
+            r.id_role, r.name AS role_name
+     FROM users u
+     LEFT JOIN user_role ur ON u.id_user = ur.user_id
+     LEFT JOIN roles r ON ur.role_id = r.id_role
+     WHERE u.id_user = $1`,
+    [id_user]
+  );
+  return result.rows[0];
+};

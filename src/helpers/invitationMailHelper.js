@@ -1,6 +1,6 @@
 export const getInvitationMailOptions = (userEmail, eventName, eventId, token) => {
     const acceptLink = `http://localhost:7777/api/invitacion/${token}`;
-    const rejectLink = "https://youtu.be/dQw4w9WgXcQ?si=ebl71c6Ebj7qYIy3";
+    const rejectLink = "#";
 
     return {
         from: process.env.EMAIL_USER,
