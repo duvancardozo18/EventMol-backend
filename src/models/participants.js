@@ -40,6 +40,18 @@ export const getParticipantById = async (id) => {
   return result.rows[0];
 };
 
+
+// Verificar si un usuario ya está registrado en un evento
+export const getParticipant = async (event_id, user_id) => {
+  const result = await pool.query(
+    `SELECT * FROM participants 
+     WHERE event_id = $1 AND user_id = $2`,
+    [event_id, user_id]
+  );
+  return result.rows[0]; 
+};
+
+
 // Actualizar un participante
 export const updateParticipantById = async (id, event_id, participant_status_id) => {
   const result = await pool.query(
@@ -56,6 +68,20 @@ export const deleteParticipantById = async (id) => {
   const result = await pool.query(
     `DELETE FROM participants WHERE id_participants = $1 RETURNING *`, 
     [id]
+  );
+  return result.rows[0];
+};
+
+
+
+// Actualizar el estado de un participante basado en user_id y event_id
+export const confirmParticipant = async (event_id, user_id) => {
+  const result = await pool.query(
+    `UPDATE participants 
+     SET participant_status_id = 2 
+     WHERE event_id = $1 AND user_id = $2 
+     RETURNING *`,
+    [event_id, user_id]
   );
   return result.rows[0];
 };

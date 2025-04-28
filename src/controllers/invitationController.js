@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import * as UserModel from '../models/user.js';
-import { createParticipant } from '../models/participants.js';
+import { createParticipant, confirmParticipant, getParticipant } from '../models/participants.js';
 import * as EventModel from '../models/event.js';
 import transporter from '../config/emailConfig.js';
 import { storeInvitationToken, getInvitationByToken, deleteInvitationToken } from '../models/invitation.js';
@@ -62,35 +62,12 @@ export const sendInvitation = async (req, res) => {
     }
 };
 
-//  Validar la invitación cuando el usuario accede al enlace
-// export const validateInvitation = async (req, res) => {
-//     try {
-//         const { token } = req.params;
 
-//         // Buscar la invitación en memoria
-//         const invitation = getInvitationByToken(token);
-//         if (!invitation) {
-//             return res.status(404).json({ error: 'Invitación no válida o expirada.' });
-//         }
-
-//         // Simulamos que se guarda la asistencia en la BD (porque no podemos modificarla)
-//         console.log(`✅ Usuario ${invitation.id_user} aceptó la invitación al evento ${invitation.id_event}`);
-
-//         // Eliminar la invitación de memoria
-//         deleteInvitationToken(token);
-
-//         res.status(200).json({ mensaje: 'Invitación aceptada con éxito.' });
-
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'Error al validar la invitación.' });
-//     }
-// };
 // 📌 Validar la invitación y registrar al usuario en la BD
 export const validateInvitation = async (req, res) => {
     try {
         const { token } = req.params;
-
+        
         // Buscar la invitación en memoria
         const invitation = getInvitationByToken(token);
         if (!invitation) {
@@ -100,18 +77,16 @@ export const validateInvitation = async (req, res) => {
         const { id_event, id_user } = invitation;
 
         // Verificar si el usuario ya está registrado en el evento
-        const existingParticipant = await ParticipantModel.getParticipant(id_event, id_user);
+        const existingParticipant = await getParticipant(id_event, id_user);
         if (existingParticipant) {
-            return res.status(400).json({ error: 'El usuario ya está registrado en este evento.' });
+            // Cambiar el estado del Participante a "Confirmado"
+            await confirmParticipant(id_event, id_user);
+
+            // Eliminar la invitación de memoria
+            deleteInvitationToken(token);
+
+            res.status(200).json({ mensaje: 'Confirmacion acepatada para el evento' });
         }
-
-        // Registrar al usuario en la tabla "participants"
-        await ParticipantModel.addParticipant(id_event, id_user);
-
-        // Eliminar la invitación de memoria
-        deleteInvitationToken(token);
-
-        res.status(200).json({ mensaje: 'Invitación aceptada y usuario registrado en el evento.' });
 
     } catch (error) {
         console.error(error);
