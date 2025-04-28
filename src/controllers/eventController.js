@@ -154,6 +154,34 @@ export const updateEvent = async (req, res) => {
   }
 };
 
+
+// Actualizar el estado de un evento
+export const updateEventStatusController = async (req, res) => {
+  const { event_state_id } = req.body;
+  const { id } = req.params;
+
+  if (!event_state_id) {
+    return res.status(400).json({ message: 'Event State ID is required' });
+  }
+
+  try {
+    const updatedEvent = await EventModel.updateEventStatus(id, event_state_id);
+
+    if (!updatedEvent) {
+      return res.status(404).json({ message: 'Event not found or no changes made' });
+    }
+
+    return res.status(200).json({ 
+      message: 'Event status updated successfully',
+      event: updatedEvent
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
 // Eliminar un evento
 export const deleteEvent = async (req, res) => {
   try {

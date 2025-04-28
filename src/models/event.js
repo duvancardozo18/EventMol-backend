@@ -99,6 +99,20 @@ export const updateEvent = async (id_event, name, event_state_id, type_of_event_
   return result.rows[0];
 };
 
+
+// Actualizar solo el estado del evento (event_state_id)
+export const updateEventStatus = async (id_event, event_state_id) => {
+  const result = await pool.query(`
+    UPDATE events
+    SET event_state_id = $1
+    WHERE id_event = $2
+    RETURNING *
+  `, [event_state_id, id_event]);
+
+  return result.rows[0];
+};
+
+
 // Eliminar un evento
 export const deleteEvent = async (id_event) => {
   const result = await pool.query(`DELETE FROM events WHERE id_event = $1 RETURNING *`, [id_event]);
