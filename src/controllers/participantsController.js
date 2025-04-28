@@ -119,7 +119,7 @@ import {
   
       // Obtener los participantes inscritos en el evento
       const result = await pool.query(
-        `SELECT p.id_participants, u.name AS user_name, u.email, ps.status_name 
+        `SELECT p.id_participants, p.user_id, u.name AS user_name, u.email, ps.status_name 
          FROM participants p
          JOIN users u ON p.user_id = u.id_user
          JOIN participant_status ps ON p.participant_status_id = ps.id_participant_status

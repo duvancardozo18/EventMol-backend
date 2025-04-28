@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import * as UserModel from '../models/user.js';
+import { createParticipant } from '../models/participants.js';
 import * as EventModel from '../models/event.js';
 import transporter from '../config/emailConfig.js';
 import { storeInvitationToken, getInvitationByToken, deleteInvitationToken } from '../models/invitation.js';
@@ -9,7 +10,7 @@ import { getInvitationMailOptions } from '../helpers/invitationMailHelper.js';
 export const sendInvitation = async (req, res) => {
     try {
         const { id_event, id_user } = req.body;
-        const { id_role } = req.user; // Obtiene el rol del usuario autenticado
+        const { id_role } = req.user; // Rol del usuario autenticado
 
         // Solo los Administradores (rol 1) y Gestores de Eventos (rol 2) pueden enviar invitaciones
         if (id_role !== 1 && id_role !== 2) {
@@ -22,40 +23,42 @@ export const sendInvitation = async (req, res) => {
             return res.status(404).json({ error: 'Usuario no encontrado.' });
         }
 
-        // Obtener el evento desde la base de datos
+        // Verificar si el evento existe
         const event = await EventModel.getEventById(id_event);
         if (!event) {
             return res.status(404).json({ error: 'Evento no encontrado.' });
         }
 
-        // Generar token único con JWT
+        // Generar token único
         const token = jwt.sign(
             { id_event, id_user },
             process.env.JWT_SECRET,
-            { expiresIn: '7d' } // Expira en 7 días
+            { expiresIn: '7d' }
         );
 
-        // Guardar la invitación en memoria
+        // Guardar invitación en memoria (o donde manejes los tokens)
         storeInvitationToken(token, id_event, id_user);
 
-        // Enlace de invitación
+        // Registrar al usuario como participante
+        const participant_status_id = 1; // Aquí defines el estado inicial del participante (por ejemplo, 1 = "invitado" o "pendiente")
+        await createParticipant(id_user, id_event, participant_status_id);
+
+        // Construir enlace de invitación
         const baseUrl = process.env.URL_FRONT_WEB_DEV || 'http://localhost:7777';
         const invitationLink = `${baseUrl}/api/invitacion/${token}`;
 
-        // Configurar el email con el nombre del evento
-        const mailOptions = getInvitationMailOptions(user.email, event.event_name, id_event, token);        
-
-        // Enviar el correo
+        // Configurar y enviar el correo
+        const mailOptions = getInvitationMailOptions(user.email, event.event_name, id_event, token);
         await transporter.sendMail(mailOptions);
 
         res.status(200).json({
-            mensaje: 'Invitación enviada con éxito.',
+            mensaje: 'Invitación enviada y participante registrado con éxito.',
             invitationLink
         });
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error al enviar la invitación.' });
+        res.status(500).json({ error: 'Error al enviar la invitación y registrar al participante.' });
     }
 };
 
