@@ -11,6 +11,24 @@ export const getFood = async (req, res) => {
   }
 };
 
+// Obtener un alimento por ID
+export const getFoodById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const food = await FoodModel.getFoodById(id);
+
+    if (!food) {
+      return res.status(404).json({ error: 'Alimento no encontrado' });
+    }
+
+    res.status(200).json(food);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener el alimento' });
+  }
+};
+
+
 // Crear un alimento
 export const createFood = async (req, res) => {
   try {
