@@ -45,7 +45,6 @@ export const getEventById = async (id_event) => {
       t.max_participants,
       t.video_conference_link,
       t.price AS event_price,
-      t.category_id,
 
       -- Datos de la categoría
       c.id_category,
@@ -68,7 +67,7 @@ export const getEventById = async (id_event) => {
     LEFT JOIN type_of_event t ON e.type_of_event_id = t.id_type_of_event
     LEFT JOIN location l ON e.location_id = l.id_location
     LEFT JOIN users u ON e.user_id_created_by = u.id_user
-    LEFT JOIN categories c ON t.category_id = c.id_category
+    LEFT JOIN categories c ON e.categories_id = c.id_category
     WHERE e.id_event = $1
   `, [id_event]);
 
