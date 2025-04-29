@@ -70,7 +70,7 @@ export const createEvent = async (req, res) => {
         return res.status(400).json({ error: 'Error al procesar la imagen' });
       }
 
-      const { name, event_state_id, user_id_created_by, location_id,type_of_event_id,price,categories_id } = req.body;
+      const { name, event_state_id, user_id_created_by, location_id,type_of_event_id } = req.body;
 
       // Verificar campos obligatorios
       if (!user_id_created_by) {
@@ -90,7 +90,7 @@ export const createEvent = async (req, res) => {
       const image_url_array = image_url ? `{${image_url}}` : null;
 
       // Crear el evento con la URL de la imagen
-      const newEvent = await EventModel.createEvent(name, event_state_id, user_id_created_by, image_url_array, location_id, type_of_event_id, price, categories_id);
+      const newEvent = await EventModel.createEvent(name, event_state_id, user_id_created_by, image_url_array, location_id, type_of_event_id);
       res.status(201).json(newEvent);
     });
   } catch (error) {
@@ -129,7 +129,7 @@ export const getEvent = async (req, res) => {
 export const updateEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, event_state_id, type_of_event_id, location_id,price,categories_id } = req.body;
+    const { name, event_state_id, type_of_event_id, location_id } = req.body;
 
     if (!name || !event_state_id || !type_of_event_id || !location_id) {
       return res.status(400).json({ error: 'Faltan campos obligatorios para actualizar el evento' });
@@ -141,7 +141,7 @@ export const updateEvent = async (req, res) => {
     const image_url_array = image_url ? `{${image_url}}` : null;
 
     // Actualizar el evento, incluyendo la URL de la imagen si fue proporcionada
-    const updatedEvent = await EventModel.updateEvent(id, name, event_state_id, type_of_event_id, location_id, image_url_array,price,categories_id);
+    const updatedEvent = await EventModel.updateEvent(id, name, event_state_id, type_of_event_id, location_id, image_url_array);
 
     if (!updatedEvent) {
       return res.status(404).json({ error: 'Evento no encontrado' });

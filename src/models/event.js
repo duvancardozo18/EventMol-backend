@@ -67,7 +67,7 @@ export const getEventById = async (id_event) => {
     LEFT JOIN type_of_event t ON e.type_of_event_id = t.id_type_of_event
     LEFT JOIN location l ON e.location_id = l.id_location
     LEFT JOIN users u ON e.user_id_created_by = u.id_user
-    LEFT JOIN categories c ON e.categories_id = c.id_category
+    LEFT JOIN categories c ON t.category_id = c.id_category
     WHERE e.id_event = $1
   `, [id_event]);
 
@@ -79,21 +79,21 @@ export const getEventById = async (id_event) => {
 
 
 // Crear un nuevo evento
-export const createEvent = async (name, event_state_id, user_id_created_by, image_url, location_id,type_of_event_id,price,categories_id) => {
+export const createEvent = async (name, event_state_id, user_id_created_by, image_url, location_id,type_of_event_id) => {
   const result = await pool.query(`
-    INSERT INTO events (name, event_state_id, user_id_created_by, image_url, location_id, type_of_event_id,price,categories_id)
-    VALUES ($1, $2, $3, $4, $5 , $6, $7, $8) RETURNING *
-  `, [name, event_state_id, user_id_created_by, image_url,location_id,type_of_event_id,price,categories_id]);
+    INSERT INTO events (name, event_state_id, user_id_created_by, image_url, location_id, type_of_event_id)
+    VALUES ($1, $2, $3, $4, $5 , $6) RETURNING *
+  `, [name, event_state_id, user_id_created_by, image_url,location_id,type_of_event_id]);
   return result.rows[0];
 };
 
 // Actualizar un evento (No se debe modificar user_id_created_by)
-export const updateEvent = async (id_event, name, event_state_id, type_of_event_id, location_id, image_url, price, categories_id) => {
+export const updateEvent = async (id_event, name, event_state_id, type_of_event_id, location_id, image_url) => {
   const result = await pool.query(`
     UPDATE events 
-    SET name = $1, event_state_id = $2, type_of_event_id = $3, location_id = $4, image_url = $5, price = $6, categories_id = $7
-    WHERE id_event = $8 RETURNING *
-  `, [name, event_state_id, type_of_event_id, location_id, image_url, id_event, price, categories_id]);
+    SET name = $1, event_state_id = $2, type_of_event_id = $3, location_id = $4, image_url = $5
+    WHERE id_event = $6 RETURNING *
+  `, [name, event_state_id, type_of_event_id, location_id, image_url, id_event]);
 
   return result.rows[0];
 };
