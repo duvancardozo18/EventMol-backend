@@ -17,7 +17,7 @@ const router = Router();
 
 // Rutas públicas (no requieren autenticación)
 router.post('/users', createUser);
-router.post('/verify-email/:token', verifyEmail);
+router.get('/verify-email/:token', verifyEmail);
 router.post('/request-password-reset', requestPasswordReset);
 router.post('/reset-password/:token', resetPassword); 
 router.post('/login', loginUser);

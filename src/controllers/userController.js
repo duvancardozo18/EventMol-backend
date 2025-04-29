@@ -31,7 +31,7 @@ export const createUser = async (req, res) => {
     const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
     // Construir el enlace de verificación con el token
-    const verificationURL = `${process.env.URL_FRONT_WEB_DEV}/verifyAccount/${token}`;
+    const verificationURL = `${process.env.URL_FRONT_WEB_DEV}/verify-email/${token}`;
 
     // Configurar correo de verificación
     const options = verificationMailOptions(email, verificationURL);
