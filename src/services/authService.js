@@ -102,6 +102,7 @@ export const authenticateUser = async (email, password) => {
         id_user: user.id_user,
         email: user.email,
         name: user.name,
+        last_name: user.last_name,
         role: user.role_name
       }
     };
