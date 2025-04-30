@@ -8,7 +8,8 @@ import {
   getUserByEmail, 
   updateUserRole, 
   editUser,
-  deleteUser
+  deleteUser,
+  sendCredentials
 } from '../controllers/userController.js';
 import { requestPasswordReset, resetPassword } from '../controllers/newPasswordController.js';
 import { verifyAuth, verifyRole } from '../middleware/authMiddleware.js'; 
@@ -30,5 +31,8 @@ router.get('/users', verifyAuth, getUsers); // Considera añadir verifyRole([1])
 router.delete('/delete-user', verifyAuth, verifyRole([1]), deleteUser); // Solo admin puede eliminar usuarios
 // Actualizar rol de usuario - solo para admins (role 1)
 router.put('/users/:id/rol', verifyAuth, verifyRole([1]), updateUserRole);
+//Enviar credenciales por email - solo para usuarios por primera vez
+router.post('/credentials', sendCredentials); 
+
 
 export default router;

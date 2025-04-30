@@ -3,6 +3,7 @@ import * as UserModel from '../models/user.js';
 import transporter from '../config/emailConfig.js';
 import { mailOptions } from '../helpers/deleteMailHelper.js';
 import { verificationMailOptions } from '../helpers/verificationEmailMailHelper.js';
+import { credentialsMailOptions } from '../helpers/credentialsMailHelper.js';
 import * as authService from '../services/authService.js';
 
 // Obtener usuarios con sus roles
@@ -215,3 +216,33 @@ export const editUser = async (req, res) => {
     res.status(500).json({ error: 'Error en la actualización del usuario.' });
   }
 };
+
+
+
+// Enviar credenciales de acceso por correo
+export const sendCredentials = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email y contraseña son requeridos.' });
+    }
+
+    // Verificar si el usuario existe
+    const user = await UserModel.getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    // Enviar correo con credenciales
+    const options = credentialsMailOptions(email, password);
+    await transporter.sendMail(options);
+
+    res.status(200).json({ mensaje: 'Correo con credenciales enviado exitosamente.' });
+
+  } catch (error) {
+    console.error('Error en la función sendCredentials:', error);
+    res.status(500).json({ error: 'Error al enviar las credenciales.' });
+  }
+};
+
