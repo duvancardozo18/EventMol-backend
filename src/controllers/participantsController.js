@@ -66,25 +66,18 @@ import {
   
   export const updateParticipant = async (req, res) => {
     try {
-      const { user_id } = req.params; // Usuario que hace la acción
-      const { id_participants, event_id, participant_status_id } = req.body; // Datos a modificar
+      const { user_id } = req.params;
+      const { participant_status_id } = req.body;
   
-      // Verificar permisos del usuario que realiza la acción
-      if (!(await hasPermissionByUserId(user_id))) {
-        return res.status(403).json({ message: "Acceso denegado. No puedes modificar este participante." });
-      }
-  
-      // Buscar el participante en la BD
-      const participant = await getParticipantById(id_participants);
-      if (!participant) {
+      // Pasa null para event_id si no es relevante
+      const updatedParticipant = await updateParticipantById(user_id, null, participant_status_id);
+      
+      if (!updatedParticipant) {
         return res.status(404).json({ message: "Participante no encontrado" });
       }
-  
-      // Actualizar el participante
-      const updatedParticipant = await updateParticipantById(id_participants, event_id, participant_status_id);
       res.status(200).json(updatedParticipant);
     } catch (error) {
-      res.status(500).json({ message: "Error al actualizar participante", error });
+      res.status(500).json({ message: "Error al actualizar", error: error.message });
     }
   };
   
@@ -131,6 +124,24 @@ import {
       res.status(200).json(result.rows);
     } catch (error) {
       res.status(500).json({ message: "Error al obtener participantes del evento", error });
+    }
+  };
+  
+
+  // Obtener un participante por ID
+  export const getParticipant = async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      const participant = await getParticipantById(id);
+  
+      if (!participant) {
+        return res.status(404).json({ message: "Participante no encontrado" });
+      }
+  
+      res.status(200).json(participant);
+    } catch (error) {
+      res.status(500).json({ message: "Error al obtener participante", error });
     }
   };
   

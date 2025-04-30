@@ -4,7 +4,8 @@ import {
   getParticipants,
   getParticipantsByEvent, 
   updateParticipant, 
-  deleteParticipant 
+  deleteParticipant,
+  getParticipant 
 } from '../controllers/participantsController.js';
 
 const router = express.Router();
@@ -12,7 +13,8 @@ const router = express.Router();
 router.post('/participants/register', registerParticipant);
 router.get('/participants/list', getParticipants);
 router.get('/participants/event/:event_id', getParticipantsByEvent);
-router.put('/participants/update/:user_id', updateParticipant);
+router.get('/participants/:id', getParticipant); // Obtener un participante por su ID
+router.put('/participants/update/:user_id', updateParticipant); // Actualizar solo el estado de un participante
 router.delete('/participants/delete/:user_id', deleteParticipant);
 
 

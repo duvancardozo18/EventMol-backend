@@ -54,12 +54,20 @@ export const getParticipant = async (event_id, user_id) => {
 
 // Actualizar un participante
 export const updateParticipantById = async (id, event_id, participant_status_id) => {
-  const result = await pool.query(
-    `UPDATE participants 
-     SET event_id = $1, participant_status_id = $2 
-     WHERE id_participants = $3 RETURNING *`,
-    [event_id, participant_status_id, id]
-  );
+  // Si event_id es null/undefined, actualiza solo participant_status_id
+  const query = event_id 
+    ? `UPDATE participants 
+       SET event_id = $1, participant_status_id = $2 
+       WHERE id_participants = $3 RETURNING *`
+    : `UPDATE participants 
+       SET participant_status_id = $1 
+       WHERE id_participants = $2 RETURNING *`;
+
+  const values = event_id 
+    ? [event_id, participant_status_id, id] 
+    : [participant_status_id, id];
+
+  const result = await pool.query(query, values);
   return result.rows[0];
 };
 
