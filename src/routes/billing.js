@@ -134,27 +134,100 @@ router.post('/billing', async (req, res) => {
     const resources = resourcesTotal;
     const total = logistics + location + food + resources;
 
-    // Insertar en la tabla billing
+    // Insertar en la tabla billing y obtener el billingId
     const insert = await db.query(`
       INSERT INTO billing (user_id, event_id, price, state, payment_method)
       VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
+      RETURNING id_billing, user_id, event_id, price, state, payment_method
     `, [event.user_id, event_id, total, 'Enviado', payment_method]);
 
-    // Enviar correo al cliente con la cotización
+    // Obtener el billingId de la respuesta de la consulta
+    const billingId = insert.rows[0].id_billing;
+
+    if (!billingId) {
+      return res.status(500).json({ message: 'Error al obtener el billingId' });
+    }
+
+    // Enviar correo al cliente con la cotización y el billingId
     await sendBillingEmail(event.email, `${event.name} ${event.last_name}`, {
       logistica: logistics,
       alquiler_sitio: location,
       alimentacion: food,
       recursos: resources,
       total
-    });
+    }, billingId);  // Pasar el billingId al correo
 
-    return res.status(201).json({ message: 'Factura creada y correo enviado', billing: insert.rows[0] });
+    return res.status(201).json({
+      message: 'Factura creada y correo enviado',
+      billing: insert.rows[0]
+    });
 
   } catch (err) {
     console.error('Error al crear factura:', err);
     res.status(500).json({ message: 'Error al crear la factura' });
+  }
+});
+
+
+// Ruta para aceptar la cotización
+router.get('/billing/accept/:billingId', async (req, res) => {
+  const { billingId } = req.params;
+
+  if (!billingId) {
+    return res.status(400).json({ message: 'ID de la factura no proporcionado' });
+  }
+
+  try {
+    const result = await db.query(`
+      UPDATE billing
+      SET state = 'Aceptado'
+      WHERE id_billing = $1
+      RETURNING *
+    `, [billingId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Factura no encontrada' });
+    }
+
+    return res.json({
+      message: 'Cotización aceptada',
+      billing: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error al aceptar la cotización:', error);
+    res.status(500).json({ message: 'Error al aceptar la cotización' });
+  }
+});
+
+// Ruta para rechazar la cotización
+router.get('/billing/reject/:billingId', async (req, res) => {
+  const { billingId } = req.params;
+
+  if (!billingId) {
+    return res.status(400).json({ message: 'ID de la factura no proporcionado' });
+  }
+
+  try {
+    const result = await db.query(`
+      UPDATE billing
+      SET state = 'Rechazado'
+      WHERE id_billing = $1
+      RETURNING *
+    `, [billingId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Factura no encontrada' });
+    }
+
+    return res.json({
+      message: 'Cotización rechazada',
+      billing: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error al rechazar la cotización:', error);
+    res.status(500).json({ message: 'Error al rechazar la cotización' });
   }
 });
 
