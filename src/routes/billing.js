@@ -231,4 +231,36 @@ router.get('/billing/reject/:billingId', async (req, res) => {
   }
 });
 
+
+// Ruta para pagar la factura
+router.get('/billing/pay/:billingId', async (req, res) => {
+  const { billingId } = req.params;
+
+  if (!billingId) {
+    return res.status(400).json({ message: 'ID de la factura no proporcionado' });
+  }
+
+  try {
+    const result = await db.query(`
+      UPDATE billing
+      SET state = 'Pagado'
+      WHERE id_billing = $1
+      RETURNING *
+    `, [billingId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Factura no encontrada' });
+    }
+
+    return res.json({
+      message: 'Factura pagada',
+      billing: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error al pagar la factura:', error);
+    res.status(500).json({ message: 'Error al pagar la factura' });
+  }
+});
+
 export default router;
