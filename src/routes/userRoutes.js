@@ -9,7 +9,8 @@ import {
   updateUserRole, 
   editUser,
   deleteUser,
-  sendCredentials
+  sendCredentials,
+  resendVerificationEmail  // Importar la nueva función
 } from '../controllers/userController.js';
 import { requestPasswordReset, resetPassword } from '../controllers/newPasswordController.js';
 import { verifyAuth, verifyRole } from '../middleware/authMiddleware.js'; 
@@ -24,6 +25,7 @@ router.post('/reset-password/:token', resetPassword);
 router.post('/login', loginUser);
 router.post('/logout', logoutUser); // Nueva ruta para cerrar sesión
 router.put('/edit-user', editUser);
+router.post('/resend-verification-email', resendVerificationEmail); // Nueva ruta para reenviar correo de verificación
 
 // Rutas protegidas (requieren autenticación)
 router.get('/users/:email', verifyAuth, getUserByEmail);
