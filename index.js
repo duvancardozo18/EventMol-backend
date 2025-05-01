@@ -19,6 +19,7 @@ import invitationHandlerRoutes from './src/routes/invitationHandlerRoutes.js';
 import categoryRoutes from './src/routes/categoryRoutes.js';
 import cookieParser from 'cookie-parser';
 import billingRoutes from './src/routes/billing.js'
+import notificationRoutes from './src/routes/notifications.js'
 
 // 1. Cargar variables de entorno
 dotenv.config();
@@ -71,6 +72,7 @@ app.use('/api', participantsRoutes);
 app.use('/api', invitationHandlerRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', billingRoutes);
+app.use('/api', notificationRoutes);
 
 // 6. Ruta inicial para verificar el servidor
 // app.get('/', (req, res) => {
