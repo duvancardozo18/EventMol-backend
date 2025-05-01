@@ -125,6 +125,21 @@ export const getEvent = async (req, res) => {
   }
 };
 
+// Obtener un evento por ID
+export const getPriceEventById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const event = await EventModel.getPriceEventById(id);
+    if (!event) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+    res.status(200).json(event);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener el evento' });
+  }
+};
+
 // Actualizar un evento
 export const updateEvent = async (req, res) => {
   try {

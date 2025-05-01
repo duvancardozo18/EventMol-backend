@@ -77,6 +77,90 @@ export const getEventById = async (id_event) => {
 
 
 
+// Obtener un evento por ID con detalles completos del tipo de evento y precios
+export const getPriceEventById = async (id_event) => {
+  const result = await pool.query(`
+    SELECT 
+      e.id_event,
+      e.name AS event_name,
+      e.image_url,
+
+      -- Estado del evento
+      es.id_event_state,
+      es.state_name AS state,
+
+      -- Datos del tipo de evento
+      t.id_type_of_event,
+      t.event_type,
+      t.description AS event_type_description,
+      t.start_time,
+      t.end_time,
+      t.max_participants,
+      t.video_conference_link,
+     
+
+      -- Datos de la categoría
+      c.id_category,
+      c.name AS category_name,
+
+      -- Datos de la ubicación
+      l.id_location,
+      l.name AS location_name,
+      l.description AS location_description,
+      l.address AS location_address,
+
+      -- Datos del usuario creador
+      u.id_user AS user_id_created_by,
+      u.name AS user_name,
+      u.last_name AS user_last_name,
+
+      -- Datos de la logística
+       t.price AS logistics_price,
+
+      -- Datos de alquiler
+       l.price AS location_rent,
+
+      -- Total alimentos (price * quantity_available)
+      COALESCE(SUM(DISTINCT f.price * f.quantity_available), 0) AS food_total,
+
+      -- Total recursos (price * quantity_available)
+      COALESCE(SUM(DISTINCT r.price * r.quantity_available), 0) AS resources_total,
+
+      -- Valor total (logística + alquiler + comida + recursos)
+      (
+        COALESCE(t.price, 0) +
+        COALESCE(l.price, 0) +
+        COALESCE(SUM(DISTINCT f.price * f.quantity_available), 0) +
+        COALESCE(SUM(DISTINCT r.price * r.quantity_available), 0)
+      ) AS total_value
+
+    FROM events e
+    JOIN event_state es ON e.event_state_id = es.id_event_state
+    LEFT JOIN type_of_event t ON e.type_of_event_id = t.id_type_of_event
+    LEFT JOIN location l ON e.location_id = l.id_location
+    LEFT JOIN users u ON e.user_id_created_by = u.id_user
+    LEFT JOIN categories c ON t.category_id = c.id_category
+
+    -- Alimentos
+    LEFT JOIN event_food ef ON ef.id_event = e.id_event
+    LEFT JOIN food f ON f.id_food = ef.id_food
+
+    -- Recursos
+    LEFT JOIN event_resources er ON er.id_event = e.id_event
+    LEFT JOIN resources r ON r.id_resource = er.id_resource
+
+    WHERE e.id_event = $1
+
+    GROUP BY 
+      e.id_event, es.id_event_state, t.id_type_of_event, 
+      c.id_category, l.id_location, u.id_user
+  `, [id_event]);
+
+  return result.rows[0];
+};
+
+
+
 
 // Crear un nuevo evento
 export const createEvent = async (name, event_state_id, user_id_created_by, image_url, location_id,type_of_event_id) => {

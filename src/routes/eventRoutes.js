@@ -5,6 +5,7 @@ const router = Router();
 
 router.get('/events', EventController.getEvents);
 router.get('/events/:id', EventController.getEvent);
+router.get('/events/prices/:id', EventController.getPriceEventById);
 router.post('/events', EventController.createEvent);
 router.put('/events/:id', EventController.uploadImage, EventController.updateEvent);
 router.put('/events/:id/status', EventController.updateEventStatusController);
