@@ -83,7 +83,7 @@ export const getEventByIdForUser = async (user_id) => {
       e.id_event,
       e.name AS name,
       e.image_url,
-      'creador' AS user_role,
+      'gestor' AS user_role,
       es.id_event_state,
       es.state_name AS state,
       t.id_type_of_event,
