@@ -111,8 +111,22 @@ export const getEvents = async (req, res) => {
 };
 
 
-// Obtener un evento por ID, validando que pertenece al usuario autenticado
+// Obtener un evento por ID
+export const getEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const event = await EventModel.getEventById(id);
+    if (!event) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+    res.status(200).json(event);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener el evento' });
+  }
+};
 
+// Obtener un evento por ID, validando que pertenece al usuario autenticado
 export const getEventByIdForUserId = async (req, res) => {
   try {
     const userId = req.user.id_user; // Obtiene el ID del usuario autenticado
