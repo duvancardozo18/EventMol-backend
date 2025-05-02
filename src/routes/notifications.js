@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../config/bd.js';
+import { runManualCheck } from '../services/eventNotificationService.js';
 
 const router = express.Router();
 
@@ -91,6 +92,42 @@ router.delete('/notifications/:notificationId', async (req, res) => {
   } catch (error) {
     console.error('Error al eliminar la notificación:', error);
     res.status(500).json({ message: 'Error al eliminar la notificación' });
+  }
+});
+
+// Marcar todas las notificaciones de un usuario como leídas
+router.put('/notifications/user/:userId/read-all', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const result = await db.query(`
+      UPDATE notifications
+      SET read_status = TRUE, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = $1 AND read_status = FALSE
+      RETURNING id_notification
+    `, [userId]);
+
+    return res.json({
+      message: `${result.rows.length} notificaciones marcadas como leídas`,
+      updated_count: result.rows.length
+    });
+  } catch (error) {
+    console.error('Error al actualizar notificaciones:', error);
+    res.status(500).json({ message: 'Error al marcar notificaciones como leídas' });
+  }
+});
+
+// Ruta para ejecutar manualmente la verificación de eventos próximos
+router.post('/notifications/check-upcoming-events', async (req, res) => {
+  try {
+    const notificationsCreated = await runManualCheck();
+    return res.json({
+      message: `Verificación manual completada`,
+      notifications_created: notificationsCreated
+    });
+  } catch (error) {
+    console.error('Error al ejecutar verificación manual:', error);
+    res.status(500).json({ message: 'Error al verificar eventos próximos' });
   }
 });
 
