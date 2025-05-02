@@ -78,42 +78,34 @@ export const getEventById = async (id_event) => {
 
 export const getEventByIdForUser = async (user_id) => {
   const result = await pool.query(`
+    -- Eventos donde el usuario es creador
     SELECT 
       e.id_event,
       e.name AS event_name,
       e.image_url,
-      'creador' AS user_role, -- Campo añadido para indicar el rol del usuario
-
-      -- Estado del evento
+      'creador' AS user_role,
       es.id_event_state,
       es.state_name AS state,
-
-      -- Datos del tipo de evento
       t.id_type_of_event,
       t.event_type,
       t.description AS event_type_description,
       t.start_time,
       t.end_time,
-      t.max_participants,
+      t.max_participants::text, -- Convertir a texto para el UNION
       t.video_conference_link,
       t.price AS event_price,
-
-      -- Datos de la categoría
       c.id_category,
       c.name AS category_name,
-
-      -- Datos de la ubicación
       l.id_location,
       l.name AS location_name,
       l.description AS location_description,
       l.price AS location_price,
       l.address AS location_address,
-
-      -- Datos del usuario creador
       u.id_user AS user_id_created_by,
       u.name AS user_name,
-      u.last_name AS user_last_name
-
+      u.last_name AS user_last_name,
+      NULL::integer AS participant_status_id, -- Especificar tipo explícito
+      NULL::integer AS billing_id -- Especificar tipo explícito
     FROM events e
     JOIN event_state es ON e.event_state_id = es.id_event_state
     LEFT JOIN type_of_event t ON e.type_of_event_id = t.id_type_of_event
@@ -121,13 +113,90 @@ export const getEventByIdForUser = async (user_id) => {
     LEFT JOIN users u ON e.user_id_created_by = u.id_user
     LEFT JOIN categories c ON t.category_id = c.id_category
     WHERE e.user_id_created_by = $1
-    ORDER BY e.id_event DESC
+    
+    UNION
+    
+    -- Eventos donde el usuario es participante
+    SELECT 
+      e.id_event,
+      e.name AS event_name,
+      e.image_url,
+      'participante' AS user_role,
+      es.id_event_state,
+      es.state_name AS state,
+      t.id_type_of_event,
+      t.event_type,
+      t.description AS event_type_description,
+      t.start_time,
+      t.end_time,
+      t.max_participants::text, -- Convertir a texto para el UNION
+      t.video_conference_link,
+      t.price AS event_price,
+      c.id_category,
+      c.name AS category_name,
+      l.id_location,
+      l.name AS location_name,
+      l.description AS location_description,
+      l.price AS location_price,
+      l.address AS location_address,
+      u.id_user AS user_id_created_by,
+      u.name AS user_name,
+      u.last_name AS user_last_name,
+      p.participant_status_id,
+      NULL::integer AS billing_id -- Especificar tipo explícito
+    FROM participants p
+    JOIN events e ON p.event_id = e.id_event
+    JOIN event_state es ON e.event_state_id = es.id_event_state
+    LEFT JOIN type_of_event t ON e.type_of_event_id = t.id_type_of_event
+    LEFT JOIN location l ON e.location_id = l.id_location
+    LEFT JOIN users u ON e.user_id_created_by = u.id_user
+    LEFT JOIN categories c ON t.category_id = c.id_category
+    WHERE p.user_id = $1
+    
+    UNION
+    
+    -- Eventos donde el usuario es cliente (en tabla billing)
+    SELECT 
+      e.id_event,
+      e.name AS event_name,
+      e.image_url,
+      'cliente' AS user_role,
+      es.id_event_state,
+      es.state_name AS state,
+      t.id_type_of_event,
+      t.event_type,
+      t.description AS event_type_description,
+      t.start_time,
+      t.end_time,
+      t.max_participants::text, -- Convertir a texto para el UNION
+      t.video_conference_link,
+      t.price AS event_price,
+      c.id_category,
+      c.name AS category_name,
+      l.id_location,
+      l.name AS location_name,
+      l.description AS location_description,
+      l.price AS location_price,
+      l.address AS location_address,
+      u.id_user AS user_id_created_by,
+      u.name AS user_name,
+      u.last_name AS user_last_name,
+      NULL::integer AS participant_status_id, -- Especificar tipo explícito
+      b.id_billing
+    FROM billing b
+    JOIN events e ON b.event_id = e.id_event
+    JOIN event_state es ON e.event_state_id = es.id_event_state
+    LEFT JOIN type_of_event t ON e.type_of_event_id = t.id_type_of_event
+    LEFT JOIN location l ON e.location_id = l.id_location
+    LEFT JOIN users u ON e.user_id_created_by = u.id_user
+    LEFT JOIN categories c ON t.category_id = c.id_category
+    WHERE b.user_id = $1
+    
+    ORDER BY id_event DESC
   `, [user_id]);
 
   return result.rows;
 };
-
-
 
 // Crear un nuevo evento
 export const createEvent = async (name, event_state_id, user_id_created_by, image_url, location_id,type_of_event_id) => {
