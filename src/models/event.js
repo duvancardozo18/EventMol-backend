@@ -81,7 +81,7 @@ export const getEventByIdForUser = async (user_id) => {
     -- Eventos donde el usuario es creador
     SELECT 
       e.id_event,
-      e.name AS event_name,
+      e.name AS name,
       e.image_url,
       'creador' AS user_role,
       es.id_event_state,
@@ -97,7 +97,7 @@ export const getEventByIdForUser = async (user_id) => {
       c.id_category,
       c.name AS category_name,
       l.id_location,
-      l.name AS location_name,
+      l.name AS location,
       l.description AS location_description,
       l.price AS location_price,
       l.address AS location_address,
