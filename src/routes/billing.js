@@ -42,7 +42,7 @@ router.get('/billing/:eventId', async (req, res) => {
 router.post('/billing', async (req, res) => {
   const { user_id, event_id, payment_method, price } = req.body;
 
-  if (!user_id || !event_id || !payment_method || !price) {
+  if (!user_id || !event_id || !price) {
     return res.status(400).json({ message: 'Faltan campos obligatorios' });
   }
 
