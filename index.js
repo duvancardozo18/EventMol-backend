@@ -18,8 +18,9 @@ import participantsRoutes from './src/routes/participantsRoutes.js';
 import invitationHandlerRoutes from './src/routes/invitationHandlerRoutes.js';
 import categoryRoutes from './src/routes/categoryRoutes.js';
 import cookieParser from 'cookie-parser';
-import billingRoutes from './src/routes/billing.js'
-import notificationRoutes from './src/routes/notifications.js'
+import billingRoutes from './src/routes/billing.js';
+import notificationRoutes from './src/routes/notifications.js';
+import './src/config/cronJobs.js';
 
 // 1. Cargar variables de entorno
 dotenv.config();
@@ -145,6 +146,14 @@ app.get("/", (req, res) => {
                   document.body.classList.toggle("dark-mode");
               }
           </script>
+
+        <script src="https://cdn.userway.org/widget.js" data-account="c6gdoTT5VM"></script>
+
+        <script src="https://cdn.botpress.cloud/webchat/v2.4/inject.js"></script>
+        <script src="https://files.bpcontent.cloud/2025/04/29/17/20250429171130-8FWA1O82.js"></script>    
+
+
+
       </body>
       </html>
   `;

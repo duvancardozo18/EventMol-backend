@@ -201,3 +201,26 @@ export const deleteEvent = async (id_event) => {
   const result = await pool.query(`DELETE FROM events WHERE id_event = $1 RETURNING *`, [id_event]);
   return result.rows[0];
 };
+
+//contador
+export const updateEventState = async () => {
+  const currentDate = new Date();
+
+  const result = await pool.query(`
+    UPDATE events
+    SET event_state_id = 
+      CASE
+        -- Si la fecha de inicio es posterior a la fecha actual, el evento está planeado
+        WHEN start_time > $1 THEN (SELECT id_event_state FROM event_state WHERE state_name = 'Planeado')
+        
+        -- Si la fecha actual está entre la fecha de inicio y la de finalización, el evento está en curso
+        WHEN start_time <= $1 AND end_time >= $1 THEN (SELECT id_event_state FROM event_state WHERE state_name = 'En curso')
+        
+        -- Si la fecha actual es posterior a la fecha de finalización, el evento está completado
+        WHEN end_time < $1 THEN (SELECT id_event_state FROM event_state WHERE state_name = 'Completado')
+      END
+    WHERE event_state_id IS NULL OR event_state_id IS NOT NULL;
+  `, [currentDate]);
+
+  return result.rowCount;  
+};
