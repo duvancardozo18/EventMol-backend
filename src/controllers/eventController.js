@@ -110,6 +110,7 @@ export const getEvents = async (req, res) => {
   }
 };
 
+
 // Obtener un evento por ID
 export const getEvent = async (req, res) => {
   try {
@@ -122,6 +123,23 @@ export const getEvent = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error al obtener el evento' });
+  }
+};
+
+// Obtener un evento por ID, validando que pertenece al usuario autenticado
+export const getEventByIdForUserId = async (req, res) => {
+  try {
+    const userId = req.user.id_user; // Obtiene el ID del usuario autenticado
+    const events = await EventModel.getEventByIdForUser(userId);
+
+    if (events.length === 0) {
+      return res.status(404).json({ error: 'No se encontraron eventos para este usuario' });
+    }
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener los eventos del usuario' });
   }
 };
 

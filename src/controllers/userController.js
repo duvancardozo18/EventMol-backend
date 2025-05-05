@@ -246,3 +246,43 @@ export const sendCredentials = async (req, res) => {
   }
 };
 
+export const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'El email es requerido.' });
+    }
+
+    // Verificar si el usuario existe
+    const user = await UserModel.getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ error: 'No se encontró un usuario con ese email.' });
+    }
+
+    // Verificar si el email ya está verificado
+    if (user.email_verified) {
+      return res.status(400).json({ error: 'El email ya ha sido verificado.' });
+    }
+
+    // Generar token JWT con el email del usuario
+    const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+    // Construir el enlace de verificación con el token
+    const verificationURL = `${process.env.URL_FRONT_WEB_DEV}/verify-email/${token}`;
+
+    // Configurar correo de verificación
+    const options = verificationMailOptions(email, verificationURL);
+
+    // Enviar email de verificación
+    await transporter.sendMail(options);
+
+    res.status(200).json({
+      mensaje: 'Correo de verificación reenviado exitosamente.',
+    });
+
+  } catch (error) {
+    console.error('Error en la función resendVerificationEmail:', error);
+    res.status(500).json({ error: 'Error al reenviar el correo de verificación.' });
+  }
+};

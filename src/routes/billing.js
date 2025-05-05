@@ -9,153 +9,74 @@ router.get('/billing/:eventId', async (req, res) => {
   const { eventId } = req.params;
 
   try {
-    const eventData = await db.query(`
+    const result = await db.query(`
       SELECT 
-        e.id_event,
+        b.id_billing,
+        b.user_id,
         u.name AS user_name,
-        u.last_name,
-        u.email,
-        toe.price AS logistics_price,
-        l.price AS location_price,
-        b.state
-      FROM events e
-      JOIN users u ON u.id_user = e.user_id_created_by
-      LEFT JOIN type_of_event toe ON toe.id_type_of_event = e.type_of_event_id
-      LEFT JOIN location l ON l.id_location = e.location_id
-      LEFT JOIN billing b ON b.event_id = e.id_event
-      WHERE e.id_event = $1
+        u.last_name AS user_last_name,
+        u.email AS user_email,
+        b.event_id,
+        b.price,
+        b.state,
+        b.payment_method,
+        b.created_at
+      FROM billing b
+      JOIN users u ON u.id_user = b.user_id
+      WHERE b.event_id = $1
+      ORDER BY b.created_at DESC
     `, [eventId]);
 
-    if (eventData.rows.length === 0) {
-      return res.status(404).json({ message: 'Evento no encontrado' });
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron facturas para este evento' });
     }
 
-    const event = eventData.rows[0];
-
-    // Calcular alimentación (multiplicando por cantidad disponible)
-    const foodRes = await db.query(`
-      SELECT f.price, f.quantity_available
-      FROM food f
-      JOIN event_food ef ON ef.id_food = f.id_food
-      WHERE ef.id_event = $1
-    `, [eventId]);
-
-    const foodTotal = foodRes.rows.reduce((acc, item) => acc + Number(item.price) * Number(item.quantity_available), 0);
-
-    // Calcular recursos (multiplicando por cantidad disponible)
-    const resourceRes = await db.query(`
-      SELECT r.price, r.quantity_available
-      FROM resources r
-      JOIN event_resources er ON er.id_resource = r.id_resource
-      WHERE er.id_event = $1
-    `, [eventId]);
-
-    const resourcesTotal = resourceRes.rows.reduce((acc, item) => acc + Number(item.price) * Number(item.quantity_available), 0);
-
-    // Calcular totales
-    const logistics = Number(event.logistics_price || 0);
-    const location = Number(event.location_price || 0);
-    const food = Number(foodTotal);
-    const resources = Number(resourcesTotal);
-    const total = logistics + location + food + resources;
-
-    return res.json({
-      cliente: {
-        nombre: `${event.user_name} ${event.last_name}`,
-        correo: event.email
-      },
-      estado: event.state || 'Sin cotización',
-      costos: {
-        logistica: logistics,
-        alquiler_sitio: location,
-        alimentacion: food,
-        recursos: resources,
-        total
-      }
-    });
-
-  } catch (error) {
-    console.error('Error al obtener la cotización:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    res.status(200).json({ billings: result.rows });
+  } catch (err) {
+    console.error('Error al obtener facturas:', err);
+    res.status(500).json({ message: 'Error al obtener las facturas' });
   }
 });
 
-// Ruta POST /billing
+
 router.post('/billing', async (req, res) => {
-  const { event_id, payment_method } = req.body;
+  const { user_id, event_id, payment_method, price } = req.body;
+
+  if (!user_id || !event_id || !price) {
+    return res.status(400).json({ message: 'Faltan campos obligatorios' });
+  }
 
   try {
-    // Obtener datos del evento y usuario
-    const eventQuery = await db.query(`
-      SELECT 
-        e.user_id_created_by AS user_id,
-        u.name,
-        u.last_name,
-        u.email,
-        toe.price AS logistics_price,
-        l.price AS location_price
-      FROM events e
-      JOIN users u ON u.id_user = e.user_id_created_by
-      LEFT JOIN type_of_event toe ON toe.id_type_of_event = e.type_of_event_id
-      LEFT JOIN location l ON l.id_location = e.location_id
-      WHERE e.id_event = $1
-    `, [event_id]);
-
-    if (eventQuery.rows.length === 0) {
+    // Verificar que el evento y el usuario existan (opcional pero recomendable)
+    const eventCheck = await db.query(`SELECT id_event FROM events WHERE id_event = $1`, [event_id]);
+    if (eventCheck.rows.length === 0) {
       return res.status(404).json({ message: 'Evento no encontrado' });
     }
 
-    const event = eventQuery.rows[0];
+    const userCheck = await db.query(`SELECT id_user, name, last_name, email FROM users WHERE id_user = $1`, [user_id]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
 
-    // Calcular alimentación (multiplicando por cantidad disponible)
-    const foodQuery = await db.query(`
-      SELECT f.price, f.quantity_available
-      FROM food f
-      JOIN event_food ef ON ef.id_food = f.id_food
-      WHERE ef.id_event = $1
-    `, [event_id]);
+    const user = userCheck.rows[0];
 
-    const foodTotal = foodQuery.rows.reduce((sum, f) => sum + Number(f.price) * Number(f.quantity_available), 0);
-
-    // Calcular recursos (multiplicando por cantidad disponible)
-    const resourcesQuery = await db.query(`
-      SELECT r.price, r.quantity_available
-      FROM resources r
-      JOIN event_resources er ON er.id_resource = r.id_resource
-      WHERE er.id_event = $1
-    `, [event_id]);
-
-    const resourcesTotal = resourcesQuery.rows.reduce((sum, r) => sum + Number(r.price) * Number(r.quantity_available), 0);
-
-    // Calcular totales
-    const logistics = Number(event.logistics_price || 0);
-    const location = Number(event.location_price || 0);
-    const food = foodTotal;
-    const resources = resourcesTotal;
-    const total = logistics + location + food + resources;
-
-    // Insertar en la tabla billing y obtener el billingId
+    // Insertar directamente la factura con los datos proporcionados
     const insert = await db.query(`
       INSERT INTO billing (user_id, event_id, price, state, payment_method)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING id_billing, user_id, event_id, price, state, payment_method
-    `, [event.user_id, event_id, total, 'Enviado', payment_method]);
+    `, [user_id, event_id, price, 'Enviado', payment_method]);
 
-    // Obtener el billingId de la respuesta de la consulta
     const billingId = insert.rows[0].id_billing;
 
-    if (!billingId) {
-      return res.status(500).json({ message: 'Error al obtener el billingId' });
-    }
-
-    // Enviar correo al cliente con la cotización y el billingId
-    await sendBillingEmail(event.email, `${event.name} ${event.last_name}`, {
-      logistica: logistics,
-      alquiler_sitio: location,
-      alimentacion: food,
-      recursos: resources,
-      total
-    }, billingId);  // Pasar el billingId al correo
+    // Enviar correo al cliente con la cotización
+    await sendBillingEmail(user.email, `${user.name} ${user.last_name}`, {
+      logistica: 0, // si ya no calculas desglose, puedes enviar 0 o eliminar estos campos del email
+      alquiler_sitio: 0,
+      alimentacion: 0,
+      recursos: 0,
+      total: price
+    }, billingId);
 
     return res.status(201).json({
       message: 'Factura creada y correo enviado',
