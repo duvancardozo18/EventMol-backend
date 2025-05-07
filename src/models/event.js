@@ -324,23 +324,35 @@ export const deleteEvent = async (id_event) => {
 
 //contador
 export const updateEventState = async () => {
-  const currentDate = new Date();
+  const currentDate = new Date(); // Se obtiene la fecha y hora actual
 
   const result = await pool.query(`
+    -- Actualiza el estado de los eventos según la fecha actual y las fechas del tipo de evento
     UPDATE events
     SET event_state_id = 
       CASE
-        -- Si la fecha de inicio es posterior a la fecha actual, el evento está planeado
-        WHEN start_time > $1 THEN (SELECT id_event_state FROM event_state WHERE state_name = 'Planeado')
+        -- Si la fecha de inicio del tipo de evento es posterior a la actual, el evento está planeado
+        WHEN toe.start_time > $1 THEN (
+          SELECT id_event_state FROM event_state WHERE state_name = 'Planeado'
+        )
         
-        -- Si la fecha actual está entre la fecha de inicio y la de finalización, el evento está en curso
-        WHEN start_time <= $1 AND end_time >= $1 THEN (SELECT id_event_state FROM event_state WHERE state_name = 'En curso')
-        
-        -- Si la fecha actual es posterior a la fecha de finalización, el evento está completado
-        WHEN end_time < $1 THEN (SELECT id_event_state FROM event_state WHERE state_name = 'Completado')
+        -- Si la fecha actual está entre la fecha de inicio y final del tipo de evento, el evento está en curso
+        WHEN toe.start_time <= $1 AND toe.end_time >= $1 THEN (
+          SELECT id_event_state FROM event_state WHERE state_name = 'En curso'
+        )
+
+        -- Si la fecha de finalización del tipo de evento ya pasó, el evento está completado
+        WHEN toe.end_time < $1 THEN (
+          SELECT id_event_state FROM event_state WHERE state_name = 'Completado'
+        )
       END
-    WHERE event_state_id IS NULL OR event_state_id IS NOT NULL;
+    -- Se hace JOIN con la tabla type_of_event para acceder a start_time y end_time
+    FROM type_of_event toe
+    WHERE events.type_of_event_id = toe.id_type_of_event
+      -- Se actualizan todos los eventos (con estado nulo o no), puedes ajustar esta condición si lo deseas
+      AND (event_state_id IS NULL OR event_state_id IS NOT NULL);
   `, [currentDate]);
 
-  return result.rowCount;  
+  return result.rowCount; // Devuelve la cantidad de filas afectadas
 };
+
