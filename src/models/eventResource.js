@@ -3,7 +3,8 @@ import pool from '../config/bd.js';
 // Obtener los recursos asignados a un evento
 export const getResourcesByEvent = async (id_event) => {
   const result = await pool.query(`
-    SELECT er.id_event, r.id_resource, r.name, r.quantity_available, r.price
+    SELECT er.id_event, r.id_resource, r.name, r.quantity_available, r.price, r.description
+
     FROM event_resources er
     JOIN resources r ON er.id_resource = r.id_resource
     WHERE er.id_event = $1

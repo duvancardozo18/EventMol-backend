@@ -3,7 +3,7 @@ import pool from '../config/bd.js';
 // Obtener todos los alimentos de un evento
 export const getFoodByEvent = async (id_event) => {
   const result = await pool.query(`
-    SELECT ef.id_event, f.id_food, f.name, f.quantity_available, f.price
+    SELECT ef.id_event, f.id_food, f.name, f.quantity_available, f.price, f.description
     FROM event_food ef
     JOIN food f ON ef.id_food = f.id_food
     WHERE ef.id_event = $1
