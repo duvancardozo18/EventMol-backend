@@ -10,9 +10,9 @@ import {
   editUser,
   deleteUser,
   sendCredentials,
-  resendVerificationEmail  // Importar la nueva función
+  resendVerificationEmail, // Importar la nueva función
 } from '../controllers/userController.js';
-import { requestPasswordReset, resetPassword } from '../controllers/newPasswordController.js';
+import { requestPasswordReset, resetPassword, verifyResetToken } from "../controllers/newPasswordController.js"
 import { verifyAuth, verifyRole } from '../middleware/authMiddleware.js'; 
 
 const router = Router();
@@ -21,7 +21,8 @@ const router = Router();
 router.post('/users', createUser);
 router.get('/verify-email/:token', verifyEmail);
 router.post('/request-password-reset', requestPasswordReset);
-router.post('/reset-password/:token', resetPassword); 
+router.get("/reset-password/:token", verifyResetToken) // Verificar si el token es válido
+router.post("/reset-password/:token", resetPassword) // Actualizar la contraseña
 router.post('/login', loginUser);
 router.post('/logout', logoutUser); // Nueva ruta para cerrar sesión
 router.put('/edit-user', editUser);
