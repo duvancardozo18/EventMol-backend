@@ -56,18 +56,22 @@ export const validatePasswordResetToken = (email, token) => {
 
 
 export const updatePassword = async (email, newPassword) => {
-  // 1. Hasheo compatible al 100% con el sistema de login
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
-  
-  // 2. Actualización directa en BD
-  const result = await pool.query(
-    `UPDATE users SET password = $1 WHERE email = $2 RETURNING *`,
-    [hashedPassword, email]
-  );
+  try {
+    // Actualización directa en BD
+    const result = await pool.query(`UPDATE users SET password = $1 WHERE email = $2 RETURNING *`, [newPassword, email])
 
-  // 3. Verificación EXTREMA (debe imprimir true)
-  const match = await bcrypt.compare(newPassword, result.rows[0].password);
-  console.log('🔥 Validación interna:', match);
-  
-  return result.rows[0];
-};
+    if (result.rows.length === 0) {
+      console.error("No se encontró el usuario con email:", email)
+      throw new Error("Usuario no encontrado")
+    }
+
+    // Verificación de que la contraseña se guardó correctamente
+    console.log("Contraseña actualizada para:", email)
+    console.log("Contraseña guardada en BD:", result.rows[0].password)
+
+    return result.rows[0]
+  } catch (error) {
+    console.error("Error al actualizar contraseña:", error)
+    throw error
+  }
+}

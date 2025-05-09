@@ -86,27 +86,37 @@ export const comparePassword = async (password, hashedPassword) => {
  * @returns {Promise<Object>} Datos del usuario y token si la autenticación es exitosa
  */
 export const authenticateUser = async (email, password) => {
-    const user = await UserModel.getUserWithPassword(email);
-    if (!user) throw new Error('Credenciales incorrectas');
+  // Obtener el usuario con su contraseña
+  const user = await UserModel.getUserWithPassword(email)
+  if (!user) throw new Error("Credenciales incorrectas")
 
-    const confirmedEmail = await UserModel.getUserByEmail(email);
-    if (confirmedEmail.email_verified != true) throw new Error(`El email no esta confirmado, debes confirmarlo para poder iniciar sesión`);
-    const isMatch = await comparePassword(password, user.password);
-    if (!isMatch) throw new Error('Credenciales incorrectas');
+  // Verificar que el email esté confirmado
+  if (!user.email_verified) throw new Error(`El email no esta confirmado, debes confirmarlo para poder iniciar sesión`)
+
+  // Verificar la contraseña
+  console.log("Intentando verificar contraseña para:", email)
+  console.log("Contraseña proporcionada (hash):", await hashPassword(password))
+  console.log("Contraseña almacenada:", user.password)
+
+  const isMatch = await comparePassword(password, user.password)
+  console.log("¿Contraseña coincide?:", isMatch)
+
+  if (!isMatch) throw new Error("Credenciales incorrectas")
+
+  const token = generateAuthToken(user)
+
+  return {
+    token,
+    usuario: {
+      id_user: user.id_user,
+      email: user.email,
+      name: user.name,
+      last_name: user.last_name,
+      role: user.role_name,
+    },
+  }
+}
   
-    const token = generateAuthToken(user);
-  
-    return {
-      token,
-      usuario: {
-        id_user: user.id_user,
-        email: user.email,
-        name: user.name,
-        last_name: user.last_name,
-        role: user.role_name
-      }
-    };
-};  
 
 /**
  * Verifica el email de un usuario mediante un token

@@ -29,8 +29,9 @@ export const requestPasswordReset = async (req, res) => {
     // Guardar el token en memoria
     passwordResetTokens.set(resetToken, { email, expiresAt });
 
-    // Generar el enlace de recuperación (aquí pasamos el token en la URL)
-    const resetURL = `http://localhost:7777/api/reset-password/${resetToken}`;
+    // Generar el enlace de recuperación (corregido con backticks)
+    // Nota: Cambiamos la URL para que apunte al frontend, no al backend
+    const resetURL = `http://localhost:5173/reset-password-form/${resetToken}`
 
     // Utilizamos mailOptions para generar el contenido del correo
     const options = mailOptions(email, resetURL);  // Aquí estamos llamando al helper para obtener las opciones del correo
@@ -43,8 +44,33 @@ export const requestPasswordReset = async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Error al solicitar recuperación de contraseña.' });
   }
-};
+}
 
+// Método para verificar si un token es válido (GET)
+export const verifyResetToken = async (req, res) => {
+  try {
+    const { token } = req.params
+
+    // Validar si el token existe y no ha expirado
+    const tokenData = passwordResetTokens.get(token)
+    if (!tokenData) {
+      return res.status(400).json({ error: "Token inválido o expirado." })
+    }
+
+    // Verificar si el token ya expiró
+    if (Date.now() > tokenData.expiresAt) {
+      passwordResetTokens.delete(token) // Eliminar token expirado
+      return res.status(400).json({ error: "El token ha expirado." })
+    }
+
+    res.status(200).json({ mensaje: "Token válido", email: tokenData.email })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ error: "Error al verificar el token." })
+  }
+}
+
+// Método para actualizar la contraseña (POST)
 export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;  // Token recibido desde la URL
@@ -66,6 +92,9 @@ export const resetPassword = async (req, res) => {
 
     // Hashear la nueva contraseña
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    console.log("Actualizando contraseña para:", email)
+    console.log("Nueva contraseña (hash):", hashedPassword)
 
     // Actualizar la contraseña en la base de datos
     await PasswordModel.updatePassword(email, hashedPassword);

@@ -84,17 +84,32 @@ export const verifyEmail = async (email) => {
 
 // Obtener usuario por email con contraseña (para login)
 export const getUserWithPassword = async (email) => {
-  const result = await pool.query(
-    `SELECT u.id_user, u.name, u.last_name, u.email, u.password, u.email_verified, 
-            r.id_role, r.name AS role_name
-     FROM users u
-     LEFT JOIN user_role ur ON u.id_user = ur.user_id
-     LEFT JOIN roles r ON ur.role_id = r.id_role
-     WHERE u.email = $1`,
-    [email]
-  );
-  return result.rows[0];
-};
+  try {
+    const result = await pool.query(
+      `SELECT u.id_user, u.name, u.last_name, u.email, u.password, u.email_verified, 
+              r.id_role, r.name AS role_name
+       FROM users u
+       LEFT JOIN user_role ur ON u.id_user = ur.user_id
+       LEFT JOIN roles r ON ur.role_id = r.id_role
+       WHERE u.email = $1`,
+      [email],
+    )
+
+    if (result.rows.length === 0) {
+      console.log("No se encontró usuario con email:", email)
+      return null
+    }
+
+    console.log("Usuario encontrado:", result.rows[0].email)
+    console.log("Contraseña almacenada:", result.rows[0].password)
+
+    return result.rows[0]
+  } catch (error) {
+    console.error("Error al obtener usuario con contraseña:", error)
+    throw error
+  }
+}
+
 
 // Actualizar datos del usuario (excepto rol)
 export const updateUser = async (email, userData) => {
