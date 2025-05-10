@@ -1,8 +1,8 @@
 const baseUrl = process.env.URL_FRONT_WEB_DEV;
 
 export const getInvitationMailOptions = (userEmail, event_name, eventId, token) => {
-     const acceptLink = `${baseUrl}/api/invitacion/${token}`;
-     const rejectLink = `${baseUrl}/api/invitacion/${token}/rechazar`;
+     const acceptLink = `${baseUrl}/invitacion/${token}`;
+     const rejectLink = `${baseUrl}/invitacion/${token}/rechazar`;
 
     return {
         from: process.env.EMAIL_USER,
