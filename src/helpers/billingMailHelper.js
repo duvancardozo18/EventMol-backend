@@ -6,8 +6,8 @@ export const getBillingMailOptions = (email, clientName, billingDetails, billing
   const { logistica, alquiler_sitio, alimentacion, recursos, total } = billingDetails;
   
   // Enlace para aceptar la cotización (cambiar a URL de producción en el entorno real)
-  const acceptLink = `${process.env.BASE_URL}/api/billing/accept/${billingId}`; // Utiliza una URL dinámica basada en el entorno
-  const rejectLink = `${process.env.BASE_URL}/api/billing/reject/${billingId}`; // Enlace para rechazar
+  const acceptLink = `${process.env.URL_FRONT_WEB_DEV}/billing/accept/${billingId}`; // Utiliza una URL dinámica basada en el entorno
+  const rejectLink = `${process.env.URL_FRONT_WEB_DEV}/billing/reject/${billingId}`; // Enlace para rechazar
 
   return {
     from: process.env.EMAIL_USER,
