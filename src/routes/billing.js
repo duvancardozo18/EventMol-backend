@@ -153,8 +153,8 @@ router.get('/billing/reject/:billingId', async (req, res) => {
 });
 
 
-// Ruta para pagar la factura
-router.get('/billing/pay/:billingId', async (req, res) => {
+// Ruta para marcar una factura como pagada
+router.put('/billing/pay/:billingId', async (req, res) => {
   const { billingId } = req.params;
 
   if (!billingId) {
@@ -174,14 +174,47 @@ router.get('/billing/pay/:billingId', async (req, res) => {
     }
 
     return res.json({
-      message: 'Factura pagada',
+      message: 'Factura marcada como pagada',
       billing: result.rows[0]
     });
 
   } catch (error) {
-    console.error('Error al pagar la factura:', error);
-    res.status(500).json({ message: 'Error al pagar la factura' });
+    console.error('Error al marcar la factura como pagada:', error);
+    res.status(500).json({ message: 'Error al actualizar el estado de la factura' });
   }
 });
+
+
+
+// Ruta para eliminar una factura
+router.delete('/billing/:billingId', async (req, res) => {
+  const { billingId } = req.params;
+
+  if (!billingId) {
+    return res.status(400).json({ message: 'ID de la factura no proporcionado' });
+  }
+
+  try {
+    const result = await db.query(`
+      DELETE FROM billing
+      WHERE id_billing = $1
+      RETURNING *
+    `, [billingId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Factura no encontrada o ya eliminada' });
+    }
+
+    return res.json({
+      message: 'Factura eliminada correctamente',
+      billing: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Error al eliminar la factura:', error);
+    res.status(500).json({ message: 'Error al eliminar la factura' });
+  }
+});
+
 
 export default router;
