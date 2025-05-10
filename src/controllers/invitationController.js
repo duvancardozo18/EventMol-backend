@@ -44,7 +44,7 @@ export const sendInvitation = async (req, res) => {
         await createParticipant(id_user, id_event, participant_status_id);
 
         // Construir enlace de invitación
-        const baseUrl = process.env.URL_FRONT_WEB_DEV || 'http://localhost:7777';
+        const baseUrl = process.env.URL_FRONT_WEB_DEV;
         const invitationLink = `${baseUrl}/api/invitacion/${token}`;
 
         // Configurar y enviar el correo
