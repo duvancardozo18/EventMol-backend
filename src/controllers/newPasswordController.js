@@ -7,6 +7,7 @@ import { mailOptions } from '../helpers/newPasswordMailHelper.js';  // Asegúrat
 
 // Mapa temporal en memoria para almacenar los tokens de recuperación
 const passwordResetTokens = new Map();
+const baseUrl = process.env.URL_FRONT_WEB_DEV;
 
 export const requestPasswordReset = async (req, res) => {
   try {
@@ -31,7 +32,7 @@ export const requestPasswordReset = async (req, res) => {
 
     // Generar el enlace de recuperación (corregido con backticks)
     // Nota: Cambiamos la URL para que apunte al frontend, no al backend
-    const resetURL = `http://localhost:5173/reset-password-form/${resetToken}`
+    const resetURL = `${baseUrl}/reset-password-form/${resetToken}`
 
     // Utilizamos mailOptions para generar el contenido del correo
     const options = mailOptions(email, resetURL);  // Aquí estamos llamando al helper para obtener las opciones del correo
