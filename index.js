@@ -40,7 +40,7 @@ const allowedOrigins = [
   ].filter(Boolean); // Filtra valores `undefined` o vacíos
 
 const corsOptions = {
-  origin: [allowedOrigins], // Cambiar esto si el frontend está en otro puerto
+  origin: allowedOrigins, // Cambiar esto si el frontend está en otro puerto
   methods: 'GET,POST,PUT,DELETE',
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
