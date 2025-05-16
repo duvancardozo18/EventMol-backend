@@ -8,22 +8,24 @@ import * as authService from '../services/authService.js';
  */
 export const verifyAuth = (req, res, next) => {
   try {
-    // Obtener token de la cookie
-    const token = req.cookies.auth_token;
-    
-    if (!token) {
-      return res.status(401).json({ error: 'No autorizado: No hay sesión activa' });
+    // Obtener el token del header Authorization
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No autorizado: Token no proporcionado' });
     }
-    
-    // Verificar token
+
+    const token = authHeader.split(' ')[1];
+
+    // Verificar el token usando tu servicio
     const decoded = authService.verifyToken(token);
-    
-    // Guardar datos del usuario en el objeto request para uso posterior
+
+    // Guardar los datos del usuario decodificados en el request
     req.user = decoded;
-    
+
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'No autorizado: Sesión inválida o expirada' });
+    return res.status(401).json({ error: 'No autorizado: Token inválido o expirado' });
   }
 };
 
