@@ -85,11 +85,37 @@ export const validateInvitation = async (req, res) => {
             // Eliminar la invitación de memoria
             deleteInvitationToken(token);
 
-            res.status(200).json({ mensaje: 'Confirmacion acepatada para el evento' });
+            res.status(200).json({ mensaje: 'Confirmacion aceptada para el evento' });
         }
 
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al validar la invitación.' });
+    }
+};
+
+// Rechazar invitación y marcar participante como Cancelado
+export const rejectInvitation = async (req, res) => {
+    try {
+        const { token } = req.params;
+        // Buscar la invitación en memoria
+        const invitation = getInvitationByToken(token);
+        if (!invitation) {
+            return res.status(404).json({ error: 'Invitación no válida o expirada.' });
+        }
+        const { id_event, id_user } = invitation;
+        // Verificar si el usuario ya está registrado en el evento
+        const existingParticipant = await getParticipant(id_event, id_user);
+        if (existingParticipant) {
+            // Cambiar el estado del Participante a "Cancelado" (4)
+            await confirmParticipant(id_event, id_user, 4); // Modifica confirmParticipant para aceptar el nuevo estado
+            // Eliminar la invitación de memoria
+            deleteInvitationToken(token);
+            return res.status(200).json({ mensaje: 'Has rechazado la invitación al evento.' });
+        }
+        return res.status(404).json({ error: 'Participante no encontrado.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al rechazar la invitación.' });
     }
 };

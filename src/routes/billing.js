@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../config/bd.js'; // Asegúrate que tu conexión a la base de datos esté correcta
 import { sendBillingEmail } from '../helpers/billingMailHelper.js';
+import { getBillingDetailsForEvent } from '../helpers/billingDetailsHelper.js';
 
 const router = express.Router();
 
@@ -69,9 +70,12 @@ router.post('/billing', async (req, res) => {
 
     const billingId = insert.rows[0].id_billing;
 
+    // Obtener los totales desglosados del evento
+    const billingDetails = await getBillingDetailsForEvent(event_id);
+
     // Enviar correo al cliente con la cotización
-    await sendBillingEmail(user.email, `${user.name} ${user.last_name}`, {
-      logistica: 0, // si ya no calculas desglose, puedes enviar 0 o eliminar estos campos del email
+    await sendBillingEmail(user.email, `${user.name} ${user.last_name}`, billingDetails || {
+      logistica: 0,
       alquiler_sitio: 0,
       alimentacion: 0,
       recursos: 0,
@@ -183,7 +187,6 @@ router.put('/billing/pay/:billingId', async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar el estado de la factura' });
   }
 });
-
 
 
 // Ruta para eliminar una factura

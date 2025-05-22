@@ -83,13 +83,13 @@ export const deleteParticipantById = async (id) => {
 
 
 // Actualizar el estado de un participante basado en user_id y event_id
-export const confirmParticipant = async (event_id, user_id) => {
+export const confirmParticipant = async (event_id, user_id, participant_status_id = 2) => {
   const result = await pool.query(
     `UPDATE participants 
-     SET participant_status_id = 2 
+     SET participant_status_id = $3 
      WHERE event_id = $1 AND user_id = $2 
      RETURNING *`,
-    [event_id, user_id]
+    [event_id, user_id, participant_status_id]
   );
   return result.rows[0];
 };
