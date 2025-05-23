@@ -28,12 +28,17 @@ export const generateEmailVerificationToken = (email) => {
  */
 export const generateAuthToken = (user) => {
   return jwt.sign(
-    { id_user: user.id_user, email: user.email, id_role: user.id_role },
+    {
+      id_user: user.id_user,
+      email: user.email,
+      id_role: user.id_role,
+      name: user.name,           // <-- Agrega esto
+      last_name: user.last_name, // <-- Y esto
+    },
     process.env.JWT_SECRET,
     { expiresIn: '1d' }
   );
 };
-
 /**
  * Verifica un token JWT
  * @param {string} token - Token JWT a verificar
