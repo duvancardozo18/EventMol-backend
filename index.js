@@ -105,7 +105,7 @@ app.get("/", (req, res) => {
   let html = `
       <html>
       <head>
-          <title>Eventos Pichote Routes</title>
+          <title>EventMol - Rutas</title>
           <style>
               body { font-family: Arial, sans-serif; text-align: center; padding: 20px; transition: background 0.3s, color 0.3s; }
               .dark-mode { background-color: #222; color: white; }
@@ -124,7 +124,7 @@ app.get("/", (req, res) => {
           </style>
       </head>
       <body>
-          <h2>Eventos Pichote Routes</h2>
+          <h2>EventMol - Rutas</h2>
           <button class="theme-btn" onclick="toggleTheme()">Dark Mode</button>
           <table>
               <tr><th>Método</th><th>Ruta</th><th>Acción</th></tr>`;
