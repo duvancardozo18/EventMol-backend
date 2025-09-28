@@ -1,18 +1,17 @@
 import pkg from 'pg';
 const { Pool } = pkg;
-
 import dotenv from 'dotenv';
-
 
 dotenv.config();
 
+const sslRequired = process.env.SSL_REQUIRED === 'true'; // control por .env si quieres
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false },
+  ssl: sslRequired ? { rejectUnauthorized: false } : false,
 });
 
-
-// verificar conexión para no ponernos nerviosos
+// verificar conexión
 async function verifyConnection() {
   try {
     await pool.query('SELECT 1');
@@ -22,7 +21,6 @@ async function verifyConnection() {
   }
 }
 
-verifyConnection(); // Llamada inmediata para testear la conexión
+verifyConnection();
 
 export default pool;
-
